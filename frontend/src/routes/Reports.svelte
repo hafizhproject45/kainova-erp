@@ -1,5 +1,7 @@
 <script lang="ts">
+  import { get } from 'svelte/store';
   import { api, ApiClientError } from '../lib/api';
+  import { authState } from '../lib/stores/auth';
 
   const reportTypes = [
     { path: '/reports/sales', label: 'Penjualan' },
@@ -32,6 +34,42 @@
   function printReport() {
     window.print();
   }
+
+  let exporting = $state(false);
+
+  async function exportReport(format: 'pdf' | 'xlsx') {
+    exporting = true;
+    errorMessage = '';
+    try {
+      const params = new URLSearchParams();
+      if (from) params.set('from', from);
+      if (to) params.set('to', to);
+      params.set('format', format);
+
+      const token = get(authState).token;
+      const res = await fetch(`/v1${selectedReport}?${params.toString()}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) throw new Error('Gagal export laporan');
+
+      const blob = await res.blob();
+      const disposition = res.headers.get('Content-Disposition') ?? '';
+      const filename = disposition.match(/filename="([^"]+)"/)?.[1] ?? `laporan.${format}`;
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      errorMessage = `Gagal export ke ${format.toUpperCase()}`;
+    } finally {
+      exporting = false;
+    }
+  }
 </script>
 
 <h1 class="mb-6 text-lg font-semibold text-slate-900">Laporan</h1>
@@ -60,10 +98,18 @@
     <button onclick={printReport} class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100">
       Print
     </button>
-    <button disabled title="TODO: backend belum implementasi export PDF" class="rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-400">
+    <button
+      onclick={() => exportReport('pdf')}
+      disabled={exporting}
+      class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-50"
+    >
       Export PDF
     </button>
-    <button disabled title="TODO: backend belum implementasi export Excel" class="rounded-lg border border-slate-200 px-4 py-2 text-sm text-slate-400">
+    <button
+      onclick={() => exportReport('xlsx')}
+      disabled={exporting}
+      class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-50"
+    >
       Export Excel
     </button>
   {/if}

@@ -63,7 +63,7 @@
       <label for="costing-method" class="mb-1 block text-sm font-medium text-slate-700">Metode Costing (HPP)</label>
       <select id="costing-method" bind:value={settings.costingMethod} class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
         <option value="FIFO">FIFO</option>
-        <option value="AVERAGE">Moving Average (belum diimplementasikan backend)</option>
+        <option value="AVERAGE">Moving Average</option>
       </select>
     </div>
 

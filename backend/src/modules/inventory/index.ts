@@ -1,7 +1,7 @@
 import { Elysia, t } from 'elysia';
-import { and, asc, eq, gt, gte, lte } from 'drizzle-orm';
+import { and, asc, eq, gt, gte, lte, sql } from 'drizzle-orm';
 import { db } from '../../config/database';
-import { inventoryBatches, stockAdjustmentItems, stockAdjustments } from '../../db/schema';
+import { inventoryBatches, productVariants, stockAdjustmentItems, stockAdjustments } from '../../db/schema';
 import { authPlugin, type AuthPayload } from '../auth';
 import { ok, NotFoundError, BusinessRuleError } from '../../utils/http';
 
@@ -78,52 +78,85 @@ export const inventoryRoutes = new Elysia({ prefix: '/stock-adjustments' })
   .post(
     '/:id/post',
     async ({ params }) => {
-      const [adjustment] = await db.select().from(stockAdjustments).where(eq(stockAdjustments.id, params.id)).limit(1);
-      if (!adjustment) throw new NotFoundError('Adjustment stok tidak ditemukan');
-      if (adjustment.status === 'POSTED') throw new BusinessRuleError('Adjustment sudah diposting sebelumnya');
+      // Satu transaksi utuh: kalau ada batch/variant yang gagal di-update, seluruh
+      // posting di-rollback — tidak boleh ada adjustment "setengah POSTED".
+      return await db.transaction(async (tx) => {
+        const [adjustment] = await tx.select().from(stockAdjustments).where(eq(stockAdjustments.id, params.id)).limit(1);
+        if (!adjustment) throw new NotFoundError('Adjustment stok tidak ditemukan');
+        if (adjustment.status === 'POSTED') throw new BusinessRuleError('Adjustment sudah diposting sebelumnya');
 
-      const items = await db.select().from(stockAdjustmentItems).where(eq(stockAdjustmentItems.adjustmentId, adjustment.id));
+        const items = await tx.select().from(stockAdjustmentItems).where(eq(stockAdjustmentItems.adjustmentId, adjustment.id));
 
-      // TODO: bungkus dalam db.transaction().
-      for (const item of items) {
-        if (item.differenceQty > 0) {
-          // Selisih lebih → batch baru (lihat PRODUCT_KNOWLEDGE.md §6).
-          await db.insert(inventoryBatches).values({
-            variantId: item.variantId,
-            initialQty: item.differenceQty,
-            remainingQty: item.differenceQty,
-            unitCost: item.unitCost ?? '0',
-            sourceType: 'ADJUSTMENT',
-            sourceId: adjustment.id,
-          });
-        } else if (item.differenceQty < 0) {
-          // Selisih kurang → potong FIFO dari batch tertua yang masih ada remaining_qty.
-          let qtyToDeduct = Math.abs(item.differenceQty);
-          const batches = await db
-            .select()
-            .from(inventoryBatches)
-            .where(and(eq(inventoryBatches.variantId, item.variantId), gt(inventoryBatches.remainingQty, 0)))
-            .orderBy(asc(inventoryBatches.receivedAt));
+        for (const item of items) {
+          const [variantBefore] = await tx
+            .select({ totalStock: productVariants.totalStock, avgCost: productVariants.avgCost })
+            .from(productVariants)
+            .where(eq(productVariants.id, item.variantId))
+            .limit(1);
+          let newAvgCost: string | undefined;
 
-          for (const batch of batches) {
-            if (qtyToDeduct <= 0) break;
-            const deduct = Math.min(batch.remainingQty, qtyToDeduct);
-            await db
-              .update(inventoryBatches)
-              .set({ remainingQty: batch.remainingQty - deduct })
-              .where(eq(inventoryBatches.id, batch.id));
-            qtyToDeduct -= deduct;
+          if (item.differenceQty > 0) {
+            // Selisih lebih → batch baru (lihat PRODUCT_KNOWLEDGE.md §6).
+            await tx.insert(inventoryBatches).values({
+              variantId: item.variantId,
+              initialQty: item.differenceQty,
+              remainingQty: item.differenceQty,
+              unitCost: item.unitCost ?? '0',
+              sourceType: 'ADJUSTMENT',
+              sourceId: adjustment.id,
+            });
+
+            // avg_cost dimaintain juga di sini (dipakai kalau costing_method = AVERAGE) —
+            // rumus sama seperti penerimaan PO (PRODUCT_KNOWLEDGE.md §5B).
+            const oldStock = variantBefore?.totalStock ?? 0;
+            const oldAvgCost = Number(variantBefore?.avgCost ?? 0);
+            const addedUnitCost = Number(item.unitCost ?? 0);
+            const newTotalStock = oldStock + item.differenceQty;
+            newAvgCost =
+              newTotalStock > 0
+                ? String((oldStock * oldAvgCost + item.differenceQty * addedUnitCost) / newTotalStock)
+                : '0';
+          } else if (item.differenceQty < 0) {
+            // Selisih kurang → potong FIFO dari batch tertua yang masih ada remaining_qty.
+            let qtyToDeduct = Math.abs(item.differenceQty);
+            const batches = await tx
+              .select()
+              .from(inventoryBatches)
+              .where(and(eq(inventoryBatches.variantId, item.variantId), gt(inventoryBatches.remainingQty, 0)))
+              .orderBy(asc(inventoryBatches.receivedAt));
+
+            for (const batch of batches) {
+              if (qtyToDeduct <= 0) break;
+              const deduct = Math.min(batch.remainingQty, qtyToDeduct);
+              await tx
+                .update(inventoryBatches)
+                .set({ remainingQty: batch.remainingQty - deduct })
+                .where(eq(inventoryBatches.id, batch.id));
+              qtyToDeduct -= deduct;
+            }
+          }
+
+          // Sinkronkan cache total_stock di product_variants (sebelumnya tidak pernah
+          // diupdate saat posting adjustment — bug: dashboard/POS menampilkan stok lama).
+          if (item.differenceQty !== 0) {
+            await tx
+              .update(productVariants)
+              .set({
+                totalStock: sql`${productVariants.totalStock} + ${item.differenceQty}`,
+                ...(newAvgCost !== undefined ? { avgCost: newAvgCost } : {}),
+              })
+              .where(eq(productVariants.id, item.variantId));
           }
         }
-      }
 
-      const [posted] = await db
-        .update(stockAdjustments)
-        .set({ status: 'POSTED', postedAt: new Date() })
-        .where(eq(stockAdjustments.id, adjustment.id))
-        .returning();
+        const [posted] = await tx
+          .update(stockAdjustments)
+          .set({ status: 'POSTED', postedAt: new Date() })
+          .where(eq(stockAdjustments.id, adjustment.id))
+          .returning();
 
-      return ok(posted, 'Adjustment stok berhasil diposting');
+        return ok(posted, 'Adjustment stok berhasil diposting');
+      });
     },
     { requireRole: ['OWNER'] },
   );

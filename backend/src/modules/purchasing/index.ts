@@ -60,37 +60,54 @@ export const purchasingRoutes = new Elysia({ prefix: '/purchase-orders' })
   .post(
     '/:id/receive',
     async ({ params }) => {
-      const [po] = await db.select().from(purchaseOrders).where(eq(purchaseOrders.id, params.id)).limit(1);
-      if (!po) throw new NotFoundError('Purchase Order tidak ditemukan');
+      // Seluruh langkah dibungkus satu transaksi: kalau ada error di tengah jalan
+      // (mis. salah satu insert batch gagal), semua perubahan di-rollback —
+      // PO tidak boleh berstatus RECEIVED sebagian dengan sebagian batch hilang.
+      return await db.transaction(async (tx) => {
+        const [po] = await tx.select().from(purchaseOrders).where(eq(purchaseOrders.id, params.id)).limit(1);
+        if (!po) throw new NotFoundError('Purchase Order tidak ditemukan');
 
-      const items = await db.select().from(purchaseOrderItems).where(eq(purchaseOrderItems.purchaseOrderId, po.id));
+        const items = await tx.select().from(purchaseOrderItems).where(eq(purchaseOrderItems.purchaseOrderId, po.id));
 
-      // TODO: bungkus dalam db.transaction() — insert inventory_batches, update qty_received,
-      // dan (mode AVERAGE) rekalkulasi avg_cost + total_stock di product_variants
-      // sesuai TECH_KNOWLEDGE.md §4 & DESIGN.md §3.
-      for (const item of items) {
-        await db.insert(inventoryBatches).values({
-          variantId: item.variantId,
-          initialQty: item.qty,
-          remainingQty: item.qty,
-          unitCost: item.unitCost,
-          sourceType: 'PURCHASE',
-          sourceId: po.id,
-        });
-        await db.update(purchaseOrderItems).set({ qtyReceived: item.qty }).where(eq(purchaseOrderItems.id, item.id));
-        await db
-          .update(productVariants)
-          .set({ totalStock: item.qty })
-          .where(eq(productVariants.id, item.variantId)); // TODO: increment, bukan overwrite
-      }
+        for (const item of items) {
+          await tx.insert(inventoryBatches).values({
+            variantId: item.variantId,
+            initialQty: item.qty,
+            remainingQty: item.qty,
+            unitCost: item.unitCost,
+            sourceType: 'PURCHASE',
+            sourceId: po.id,
+          });
+          await tx.update(purchaseOrderItems).set({ qtyReceived: item.qty }).where(eq(purchaseOrderItems.id, item.id));
 
-      const [updatedPo] = await db
-        .update(purchaseOrders)
-        .set({ status: 'RECEIVED', receivedAt: new Date() })
-        .where(eq(purchaseOrders.id, po.id))
-        .returning();
+          // avg_cost selalu di-maintain (dipakai kalau costing_method = AVERAGE) —
+          // rumus Moving Average: (StokLama x HPP Lama + StokBaru x HargaBeli Baru) / TotalStokBaru
+          // (TECH_KNOWLEDGE.md §4 & PRODUCT_KNOWLEDGE.md §5B).
+          const [variant] = await tx
+            .select({ totalStock: productVariants.totalStock, avgCost: productVariants.avgCost })
+            .from(productVariants)
+            .where(eq(productVariants.id, item.variantId))
+            .limit(1);
+          const oldStock = variant?.totalStock ?? 0;
+          const oldAvgCost = Number(variant?.avgCost ?? 0);
+          const receivedUnitCost = Number(item.unitCost);
+          const newTotalStock = oldStock + item.qty;
+          const newAvgCost = newTotalStock > 0 ? (oldStock * oldAvgCost + item.qty * receivedUnitCost) / newTotalStock : 0;
 
-      return ok(updatedPo, 'Barang berhasil diterima');
+          await tx
+            .update(productVariants)
+            .set({ totalStock: newTotalStock, avgCost: String(newAvgCost) })
+            .where(eq(productVariants.id, item.variantId));
+        }
+
+        const [updatedPo] = await tx
+          .update(purchaseOrders)
+          .set({ status: 'RECEIVED', receivedAt: new Date() })
+          .where(eq(purchaseOrders.id, po.id))
+          .returning();
+
+        return ok(updatedPo, 'Barang berhasil diterima');
+      });
     },
     { requireRole: ['OWNER', 'GUDANG'] },
   );

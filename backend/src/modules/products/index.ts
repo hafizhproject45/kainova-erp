@@ -1,5 +1,5 @@
 import { Elysia, t } from 'elysia';
-import { eq, isNull } from 'drizzle-orm';
+import { and, eq, isNull } from 'drizzle-orm';
 import { db } from '../../config/database';
 import { categories, productVariants, products } from '../../db/schema';
 import { authPlugin } from '../auth';
@@ -11,7 +11,10 @@ export const productsRoutes = new Elysia()
     '/products',
     async ({ query }) => {
       const rows = query.category_id
-        ? await db.select().from(products).where(eq(products.categoryId, query.category_id))
+        ? await db
+            .select()
+            .from(products)
+            .where(and(eq(products.categoryId, query.category_id), isNull(products.deletedAt)))
         : await db.select().from(products).where(isNull(products.deletedAt));
       return ok(rows);
     },
@@ -19,8 +22,52 @@ export const productsRoutes = new Elysia()
   )
   .get(
     '/products/:id/variants',
-    async ({ params }) => ok(await db.select().from(productVariants).where(eq(productVariants.productId, params.id))),
+    async ({ params }) =>
+      ok(
+        await db
+          .select()
+          .from(productVariants)
+          .where(and(eq(productVariants.productId, params.id), isNull(productVariants.deletedAt))),
+      ),
     { requireRole: ['OWNER', 'GUDANG', 'KASIR'] },
+  )
+  .put(
+    '/products/:id',
+    async ({ params, body }) => {
+      if (body.category_id) {
+        const [category] = await db.select().from(categories).where(eq(categories.id, body.category_id)).limit(1);
+        if (!category) throw new NotFoundError('Kategori tidak ditemukan');
+      }
+      const [row] = await db
+        .update(products)
+        .set({ name: body.name, categoryId: body.category_id, updatedAt: new Date() })
+        .where(and(eq(products.id, params.id), isNull(products.deletedAt)))
+        .returning();
+      if (!row) throw new NotFoundError('Produk tidak ditemukan');
+      return ok(row, 'Produk berhasil diperbarui');
+    },
+    {
+      body: t.Object({ name: t.Optional(t.String()), category_id: t.Optional(t.String()) }),
+      requireRole: ['OWNER'],
+    },
+  )
+  .delete(
+    '/products/:id',
+    async ({ params }) => {
+      const [row] = await db
+        .update(products)
+        .set({ deletedAt: new Date() })
+        .where(and(eq(products.id, params.id), isNull(products.deletedAt)))
+        .returning();
+      if (!row) throw new NotFoundError('Produk tidak ditemukan');
+      // Cascade: varian SKU di bawah produk ini ikut di-soft-delete agar tidak lagi muncul di POS/Master Data.
+      await db
+        .update(productVariants)
+        .set({ deletedAt: new Date() })
+        .where(and(eq(productVariants.productId, params.id), isNull(productVariants.deletedAt)));
+      return ok(row, 'Produk & seluruh varian SKU-nya berhasil dihapus');
+    },
+    { requireRole: ['OWNER'] },
   )
   .post(
     '/products/matrix',
@@ -67,14 +114,42 @@ export const productsRoutes = new Elysia()
     async ({ params, body }) => {
       const [row] = await db
         .update(productVariants)
-        .set({ price: body.price !== undefined ? String(body.price) : undefined, updatedAt: new Date() })
-        .where(eq(productVariants.id, params.id))
+        .set({
+          price: body.price !== undefined ? String(body.price) : undefined,
+          material: body.material,
+          color: body.color,
+          size: body.size,
+          leadTimeDays: body.lead_time_days,
+          safetyStock: body.safety_stock,
+          updatedAt: new Date(),
+        })
+        .where(and(eq(productVariants.id, params.id), isNull(productVariants.deletedAt)))
         .returning();
       if (!row) throw new NotFoundError('Varian SKU tidak ditemukan');
       return ok(row, 'Varian SKU berhasil diperbarui');
     },
     {
-      body: t.Object({ price: t.Optional(t.Number()) }),
+      body: t.Object({
+        price: t.Optional(t.Number()),
+        material: t.Optional(t.String()),
+        color: t.Optional(t.String()),
+        size: t.Optional(t.String()),
+        lead_time_days: t.Optional(t.Number()),
+        safety_stock: t.Optional(t.Number()),
+      }),
       requireRole: ['OWNER'],
     },
+  )
+  .delete(
+    '/product-variants/:id',
+    async ({ params }) => {
+      const [row] = await db
+        .update(productVariants)
+        .set({ deletedAt: new Date() })
+        .where(and(eq(productVariants.id, params.id), isNull(productVariants.deletedAt)))
+        .returning();
+      if (!row) throw new NotFoundError('Varian SKU tidak ditemukan');
+      return ok(row, 'Varian SKU berhasil dihapus');
+    },
+    { requireRole: ['OWNER'] },
   );

@@ -35,8 +35,13 @@ export const productVariants = pgTable('product_variants', {
   price: numeric('price', { precision: 12, scale: 2 }).notNull(),
   avgCost: numeric('avg_cost', { precision: 12, scale: 2 }).default('0').notNull(),
   totalStock: integer('total_stock').default(0).notNull(),
+  // Dipakai untuk kalkulasi ROP (Re-Order Point) — PRODUCT_KNOWLEDGE.md §7A.
+  // Default 7 hari lead time & 0 safety stock; idealnya diisi per-produk lewat Master Data.
+  leadTimeDays: integer('lead_time_days').default(7).notNull(),
+  safetyStock: integer('safety_stock').default(0).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  deletedAt: timestamp('deleted_at'),
 });
 
 // ---------------------------------------------------------------------------

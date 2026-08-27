@@ -14,6 +14,9 @@ import {
 import { authPlugin } from '../auth';
 import { ok, BusinessRuleError, NotFoundError } from '../../utils/http';
 
+/** Tipe eksekutor query: bisa `db` langsung atau `tx` di dalam `db.transaction()`. */
+type Executor = Parameters<Parameters<typeof db.transaction>[0]>[0];
+
 /** Kode channel singkat untuk invoice_number (lihat PRODUCT_KNOWLEDGE.md §4A). */
 function channelCode(channel: string): string {
   if (channel.startsWith('POS')) return 'POS';
@@ -24,11 +27,11 @@ function channelCode(channel: string): string {
 }
 
 /** Generate invoice_number secara atomik via upsert-and-increment (DESIGN.md §2.5). */
-async function generateInvoiceNumber(channel: string): Promise<string> {
+async function generateInvoiceNumber(tx: Executor, channel: string): Promise<string> {
   const code = channelCode(channel);
   const periodKey = new Date().toISOString().slice(0, 10).replace(/-/g, '');
 
-  const [counter] = await db
+  const [counter] = await tx
     .insert(invoiceCounters)
     .values({ channelCode: code, periodKey, lastSequence: 1 })
     .onConflictDoUpdate({
@@ -67,8 +70,11 @@ export const salesRoutes = new Elysia({ prefix: '/sales' })
   .post(
     '/checkout',
     async ({ body }) => {
-      // TODO: bungkus seluruh handler ini dalam db.transaction() untuk atomicity penuh.
-
+      // Seluruh transaksi checkout (baca harga, potong stok FIFO, generate invoice
+      // number, tulis sales_orders/items) dibungkus satu db.transaction() — kalau
+      // ada error di tengah (mis. stok kurang di item ke-3), semua write di-rollback,
+      // termasuk pemotongan stok item ke-1 & ke-2 yang sudah sempat jalan.
+      return await db.transaction(async (tx) => {
       // 1. Hitung per-item: lineSubtotal, discountAmount (per-item), lineTotal.
       let subtotal = 0;
       let itemDiscountTotal = 0;
@@ -89,7 +95,7 @@ export const salesRoutes = new Elysia({ prefix: '/sales' })
         let discount: typeof discounts.$inferSelect | null = null;
         let discountAmount = 0;
         if (item.discount_id) {
-          const rows = await db.select().from(discounts).where(eq(discounts.id, item.discount_id)).limit(1);
+          const rows = await tx.select().from(discounts).where(eq(discounts.id, item.discount_id)).limit(1);
           discount = rows[0] ?? null;
           if (discount) discountAmount = calcDiscount(discount.type, Number(discount.value), lineSubtotal);
         }
@@ -110,7 +116,7 @@ export const salesRoutes = new Elysia({ prefix: '/sales' })
       let orderDiscount: typeof discounts.$inferSelect | null = null;
       let discountAmount = 0;
       if (body.discount_id) {
-        const rows = await db.select().from(discounts).where(eq(discounts.id, body.discount_id)).limit(1);
+        const rows = await tx.select().from(discounts).where(eq(discounts.id, body.discount_id)).limit(1);
         orderDiscount = rows[0] ?? null;
         if (orderDiscount) {
           discountAmount = calcDiscount(orderDiscount.type, Number(orderDiscount.value), subtotal - itemDiscountTotal);
@@ -123,7 +129,7 @@ export const salesRoutes = new Elysia({ prefix: '/sales' })
       let ppn: typeof taxes.$inferSelect | null = null;
       let ppnAmount = 0;
       if (body.ppn_tax_id) {
-        const rows = await db.select().from(taxes).where(eq(taxes.id, body.ppn_tax_id)).limit(1);
+        const rows = await tx.select().from(taxes).where(eq(taxes.id, body.ppn_tax_id)).limit(1);
         ppn = rows[0] ?? null;
         if (ppn) ppnAmount = (dpp * Number(ppn.rate)) / 100;
       }
@@ -131,20 +137,25 @@ export const salesRoutes = new Elysia({ prefix: '/sales' })
       let pph: typeof taxes.$inferSelect | null = null;
       let pphAmount = 0;
       if (body.pph_tax_id) {
-        const rows = await db.select().from(taxes).where(eq(taxes.id, body.pph_tax_id)).limit(1);
+        const rows = await tx.select().from(taxes).where(eq(taxes.id, body.pph_tax_id)).limit(1);
         pph = rows[0] ?? null;
         if (pph) pphAmount = (dpp * Number(pph.rate)) / 100;
       }
 
       const grandTotal = dpp + ppnAmount - pphAmount;
 
-      // 4. Validasi & potong stok FIFO (TODO: dukung mode AVERAGE sesuai system_settings.costingMethod).
+      // 4. Validasi & potong stok. HPP dihitung sesuai system_settings.costingMethod:
+      //    FIFO → dari harga tiap batch yang dipotong; AVERAGE → dari avg_cost variant
+      //    (batch tetap dipotong FIFO untuk menjaga ledger remaining_qty, hanya *biaya*-nya beda sumber).
+      const [settingsRow] = await tx.select({ costingMethod: systemSettings.costingMethod }).from(systemSettings).limit(1);
+      const costingMethod = settingsRow?.costingMethod ?? 'FIFO';
+
       let totalCostOfGoods = 0;
       const costOfGoodsByVariant: Record<string, number> = {};
       for (const item of preparedItems) {
         let qtyToDeduct = item.qty;
         let itemCost = 0;
-        const batches = await db
+        const batches = await tx
           .select()
           .from(inventoryBatches)
           .where(and(eq(inventoryBatches.variantId, item.variantId), gt(inventoryBatches.remainingQty, 0)))
@@ -155,11 +166,21 @@ export const salesRoutes = new Elysia({ prefix: '/sales' })
           throw new BusinessRuleError(`Stok tidak mencukupi untuk variant ${item.variantId}`);
         }
 
+        let avgCostForItem = 0;
+        if (costingMethod === 'AVERAGE') {
+          const [variant] = await tx
+            .select({ avgCost: productVariants.avgCost })
+            .from(productVariants)
+            .where(eq(productVariants.id, item.variantId))
+            .limit(1);
+          avgCostForItem = Number(variant?.avgCost ?? 0);
+        }
+
         for (const batch of batches) {
           if (qtyToDeduct <= 0) break;
           const deduct = Math.min(batch.remainingQty, qtyToDeduct);
-          itemCost += deduct * Number(batch.unitCost);
-          await db
+          itemCost += deduct * (costingMethod === 'AVERAGE' ? avgCostForItem : Number(batch.unitCost));
+          await tx
             .update(inventoryBatches)
             .set({ remainingQty: batch.remainingQty - deduct })
             .where(eq(inventoryBatches.id, batch.id));
@@ -169,16 +190,16 @@ export const salesRoutes = new Elysia({ prefix: '/sales' })
         costOfGoodsByVariant[item.variantId] = itemCost;
         totalCostOfGoods += itemCost;
 
-        await db
+        await tx
           .update(productVariants)
           .set({ totalStock: sql`${productVariants.totalStock} - ${item.qty}` })
           .where(eq(productVariants.id, item.variantId));
       }
 
       // 5. Generate invoice_number & simpan sales_orders + sales_order_items.
-      const invoiceNumber = await generateInvoiceNumber(body.channel);
+      const invoiceNumber = await generateInvoiceNumber(tx, body.channel);
 
-      const [salesOrder] = await db
+      const [salesOrder] = await tx
         .insert(salesOrders)
         .values({
           invoiceNumber,
@@ -205,7 +226,7 @@ export const salesRoutes = new Elysia({ prefix: '/sales' })
         })
         .returning();
 
-      await db.insert(salesOrderItems).values(
+      await tx.insert(salesOrderItems).values(
         preparedItems.map((item) => ({
           salesOrderId: salesOrder!.id,
           variantId: item.variantId,
@@ -237,6 +258,7 @@ export const salesRoutes = new Elysia({ prefix: '/sales' })
         },
         'Transaksi berhasil',
       );
+      });
     },
     {
       body: t.Object({
