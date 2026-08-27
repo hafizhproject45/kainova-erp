@@ -13,27 +13,59 @@
 
 ## 2. Architecture & Code Structure (Modular Monolith)
 
-Struktur repositori backend mengadopsi pola Clean Architecture yang termodularisasi:
+Repositori KaiNova ERP adalah satu repo (monorepo sederhana, bukan workspaces) berisi dua folder top-level terpisah: `backend/` dan `frontend/`, masing-masing dengan `package.json` sendiri dan dijalankan sebagai proses independen (lihat `README.md` untuk cara menjalankan keduanya).
 
 ```text
-src/
-├── config/             # Environment, Database, & Costing Engine Settings
-├── db/
-│   ├── schema/         # Drizzle Schema Definitions
-│   └── migrations/     # SQL Migration Files
-├── modules/
-│   ├── auth/               # JWT & RBAC Middleware
-│   ├── master-data/        # Customer, Supplier, Tax, Discount, Category
-│   ├── products/           # Parent Product, Variants, & SKU Matrix
-│   ├── purchasing/         # Purchase Order & Goods Receipt
-│   ├── inventory/          # Inventory Batches, Stock Adjustment, FIFO/Average Logics
-│   ├── sales/              # POS Checkout, Multi-Channel Orders, Receipt
-│   ├── dashboard/          # Ringkasan KPI harian
-│   ├── reports/            # Laporan (filter, print, export PDF/Excel)
-│   ├── settings/           # System Settings (costing method, pajak default, dst.)
-│   └── analytics/          # Slow-Moving, Fast-Moving, Inventory Velocity
-├── utils/              # Helper, Logger, Error Handling
-└── index.ts            # Elysia App Entrypoint
+kainova/
+├── backend/            # Bun + ElysiaJS + Drizzle ORM + PostgreSQL
+├── frontend/           # Vite + Svelte 5 + Tailwind CSS (SPA)
+└── docs/
+    └── source_of_truth/
+```
+
+Struktur `backend/` mengadopsi pola Clean Architecture yang termodularisasi:
+
+```text
+backend/
+├── src/
+│   ├── config/             # Environment, Database, & Costing Engine Settings
+│   ├── db/
+│   │   ├── schema/         # Drizzle Schema Definitions
+│   │   ├── migrations/     # SQL Migration Files
+│   │   └── seed.ts         # Seed data awal (user OWNER + default settings)
+│   ├── modules/
+│   │   ├── auth/               # JWT & RBAC Middleware
+│   │   ├── master-data/        # Customer, Supplier, Tax, Discount, Category
+│   │   ├── products/           # Parent Product, Variants, & SKU Matrix
+│   │   ├── purchasing/         # Purchase Order & Goods Receipt
+│   │   ├── inventory/          # Inventory Batches, Stock Adjustment, FIFO/Average Logics
+│   │   ├── sales/              # POS Checkout, Multi-Channel Orders, Receipt
+│   │   ├── dashboard/          # Ringkasan KPI harian
+│   │   ├── reports/            # Laporan (filter, print, export PDF/Excel)
+│   │   ├── settings/           # System Settings (costing method, pajak default, dst.)
+│   │   └── analytics/          # Slow-Moving, Fast-Moving, Inventory Velocity
+│   ├── utils/              # Helper, Logger, Error Handling
+│   └── index.ts            # Elysia App Entrypoint
+├── drizzle.config.ts
+├── package.json
+└── .env.example
+```
+
+Struktur `frontend/` (SPA Svelte, mengonsumsi REST API `backend/` lewat proxy `/v1/*` saat development):
+
+```text
+frontend/
+├── src/
+│   ├── lib/
+│   │   ├── api.ts          # HTTP client + konversi camelCase<->snake_case
+│   │   ├── stores/auth.ts  # State login (token & user), persist ke localStorage
+│   │   └── Layout.svelte   # Sidebar navigasi & topbar
+│   ├── routes/             # 1 file per modul (Dashboard, MasterData, Pos,
+│   │                       # Purchasing, StockAdjustment, Reports, Settings, Login)
+│   ├── App.svelte          # Router (svelte-spa-router) + auth guard
+│   └── main.ts             # Entrypoint
+├── vite.config.ts
+└── package.json
 ```
 
 ## 3. Database Conventions & Drizzle Setup
