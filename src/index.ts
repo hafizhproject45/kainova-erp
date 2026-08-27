@@ -3,6 +3,7 @@ import cors from '@elysiajs/cors';
 import swagger from '@elysiajs/swagger';
 import { env } from './config/env';
 import { ApiError, fail } from './utils/http';
+import { ValidationError as ElysiaValidationError, NotFoundError as ElysiaNotFoundError } from 'elysia';
 import { authRoutes } from './modules/auth';
 import { masterDataRoutes } from './modules/master-data';
 import { productsRoutes } from './modules/products';
@@ -21,6 +22,16 @@ const app = new Elysia()
     if (error instanceof ApiError) {
       set.status = error.status;
       return fail(error.message, error.errors);
+    }
+    // Validasi request Elysia sendiri (t.Object() schema mismatch) — kembalikan 422
+    // dengan pesan jelas, jangan ditelan jadi generic 500 (TECH_KNOWLEDGE.md §5).
+    if (error instanceof ElysiaValidationError) {
+      set.status = 422;
+      return fail('Validation failure', { summary: error.message });
+    }
+    if (error instanceof ElysiaNotFoundError) {
+      set.status = 404;
+      return fail('Route tidak ditemukan');
     }
     console.error(error);
     set.status = 500;
