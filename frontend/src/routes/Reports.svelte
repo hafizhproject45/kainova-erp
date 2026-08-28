@@ -122,9 +122,7 @@
 {:else if result}
   <div class="rounded-xl border border-slate-200 bg-white p-5">
     {#if result.rows.length === 0}
-      <p class="text-sm text-amber-600">
-        Belum ada data — endpoint laporan ini masih placeholder di backend (lihat DEVELOPMENT_ROADMAP.md Phase 4).
-      </p>
+      <p class="text-sm text-slate-500">Tidak ada data untuk filter yang dipilih.</p>
     {:else}
       <table class="w-full text-sm">
         <thead>

@@ -49,7 +49,6 @@
     <div class="rounded-xl border border-slate-200 bg-white p-5">
       <p class="text-xs font-medium text-slate-500">Laba Kotor Hari Ini</p>
       <p class="mt-2 text-2xl font-semibold text-slate-900">{formatRupiah(summary.grossProfitToday)}</p>
-      <p class="mt-1 text-xs text-amber-600">*Perhitungan masih placeholder (TODO backend)</p>
     </div>
   </div>
 
