@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1787807437613,
+      "tag": "0000_remarkable_celestials",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1787817051820,
+      "tag": "0001_living_franklin_storm",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1787818382851,
+      "tag": "0002_optimal_vivisector",
+      "breakpoints": true
+    }
+  ]
+}
