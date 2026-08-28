@@ -120,12 +120,12 @@
   <h1 class="text-lg font-semibold text-slate-900">Dashboard</h1>
 
   <div class="flex flex-wrap items-center gap-2">
-    <div class="flex rounded-lg border border-slate-300 bg-white p-0.5">
+    <div class="flex items-center rounded-lg border border-slate-300 bg-white p-1">
       {#each PERIOD_OPTIONS as opt (opt.key)}
         <button
           type="button"
           onclick={() => selectPeriod(opt.key)}
-          class="rounded-md px-3 py-1.5 text-xs font-medium transition {period === opt.key
+          class="rounded-md px-4 py-2 text-sm font-medium transition {period === opt.key
             ? 'bg-primary-600 text-white'
             : 'text-slate-600 hover:bg-slate-100'}"
         >
