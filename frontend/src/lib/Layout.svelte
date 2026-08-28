@@ -18,7 +18,7 @@
 </script>
 
 <div class="flex min-h-screen bg-slate-50">
-  <aside class="w-60 shrink-0 border-r border-slate-200 bg-white">
+  <aside class="w-60 shrink-0 border-r border-slate-200 bg-white print:hidden">
     <div class="border-b border-slate-200 px-5 py-4">
       <p class="text-sm font-semibold text-slate-900">KaiNova ERP</p>
       <p class="text-xs text-slate-500">Popyshop</p>
@@ -39,7 +39,7 @@
   </aside>
 
   <div class="flex flex-1 flex-col">
-    <header class="flex items-center justify-between border-b border-slate-200 bg-white px-6 py-3">
+    <header class="flex items-center justify-between border-b border-slate-200 bg-white px-6 py-3 print:hidden">
       <div></div>
       <div class="flex items-center gap-3">
         <div class="text-right">

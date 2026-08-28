@@ -28,6 +28,23 @@
   let errorMessage = $state('');
   let successMessage = $state('');
 
+  // --- Search / filter tabel ---
+  let searchQuery = $state('');
+  let categoryFilter = $state(''); // khusus tab Produk & SKU
+  const categoryNameById = $derived(new Map(categories.map((c) => [c.id, c.name])));
+  const filteredRows = $derived(
+    rows.filter((row) => {
+      if (activeTab === 'products' && categoryFilter && row.categoryId !== categoryFilter) return false;
+      if (!searchQuery.trim()) return true;
+      const q = searchQuery.trim().toLowerCase();
+      return columnsFor(activeTab).some((col) => {
+        let value = row[col];
+        if (activeTab === 'products' && col === 'categoryId') value = categoryNameById.get(String(value)) ?? value;
+        return String(value ?? '').toLowerCase().includes(q);
+      });
+    }),
+  );
+
   // --- Varian SKU per produk (panel expand di bawah baris produk) ---
   let expandedProductId = $state<string | null>(null);
   let variantRows = $state<Record<string, unknown>[]>([]);
@@ -127,6 +144,8 @@
     activeTab;
     loadRows();
     expandedProductId = null;
+    searchQuery = '';
+    categoryFilter = '';
   });
 
   function startEdit(row: Record<string, unknown>) {
@@ -359,10 +378,31 @@
 </div>
 
 <div class="rounded-xl border border-slate-200 bg-white p-5">
+  <div class="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center">
+    <input
+      type="search"
+      placeholder="Cari..."
+      bind:value={searchQuery}
+      class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm sm:max-w-xs"
+    />
+    {#if activeTab === 'products'}
+      <select bind:value={categoryFilter} class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm sm:max-w-xs">
+        <option value="">Semua Kategori</option>
+        {#each categories as category (category.id)}
+          <option value={category.id}>{category.name}</option>
+        {/each}
+      </select>
+    {/if}
+    {#if searchQuery || categoryFilter}
+      <span class="text-xs text-slate-500">{filteredRows.length} dari {rows.length} data</span>
+    {/if}
+  </div>
   {#if loading}
     <p class="text-sm text-slate-500">Memuat...</p>
   {:else if rows.length === 0}
     <p class="text-sm text-slate-500">Belum ada data.</p>
+  {:else if filteredRows.length === 0}
+    <p class="text-sm text-slate-500">Tidak ada data yang cocok dengan pencarian/filter.</p>
   {:else}
     <table class="w-full text-sm">
       <thead>
@@ -376,7 +416,7 @@
         </tr>
       </thead>
       <tbody>
-        {#each rows as row, i (i)}
+        {#each filteredRows as row, i (i)}
           <tr class="border-b border-slate-100">
             {#each columnsFor(activeTab) as col (col)}
               <td class="py-2 pr-4">{String(row[col] ?? '')}</td>

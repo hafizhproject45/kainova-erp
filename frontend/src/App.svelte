@@ -10,6 +10,7 @@
   import StockAdjustment from './routes/StockAdjustment.svelte';
   import Reports from './routes/Reports.svelte';
   import Settings from './routes/Settings.svelte';
+  import ReceiptPrint from './routes/ReceiptPrint.svelte';
   import NotFound from './routes/NotFound.svelte';
 
   const routes = {
@@ -21,6 +22,7 @@
     '/stock-adjustment': StockAdjustment,
     '/reports': Reports,
     '/settings': Settings,
+    '/receipt/:id': ReceiptPrint,
     '*': NotFound,
   };
 </script>

@@ -38,6 +38,7 @@
     discountId: string;
   }
   interface CheckoutResult {
+    id: string;
     invoiceNumber: string;
     subtotal: number;
     itemDiscountTotal: number;
@@ -157,7 +158,14 @@
         <dt>Grand Total</dt><dd>{formatRupiah(result.grandTotal)}</dd>
       </div>
     </dl>
-    <button onclick={newTransaction} class="mt-4 w-full rounded-lg bg-indigo-600 py-2 text-sm font-medium text-white hover:bg-indigo-700">
+    <a
+      href={`#/receipt/${result.id}`}
+      target="_blank"
+      class="mt-4 block w-full rounded-lg border border-indigo-600 py-2 text-center text-sm font-medium text-indigo-700 hover:bg-indigo-50"
+    >
+      Cetak Struk
+    </a>
+    <button onclick={newTransaction} class="mt-2 w-full rounded-lg bg-indigo-600 py-2 text-sm font-medium text-white hover:bg-indigo-700">
       Transaksi Baru
     </button>
   </div>

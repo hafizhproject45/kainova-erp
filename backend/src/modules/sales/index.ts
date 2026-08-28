@@ -2,10 +2,12 @@ import { Elysia, t } from 'elysia';
 import { and, asc, eq, gt, sql } from 'drizzle-orm';
 import { db } from '../../config/database';
 import {
+  customers,
   discounts,
   inventoryBatches,
   invoiceCounters,
   productVariants,
+  products,
   salesOrderItems,
   salesOrders,
   systemSettings,
@@ -285,11 +287,41 @@ export const salesRoutes = new Elysia({ prefix: '/sales' })
     async ({ params }) => {
       const [salesOrder] = await db.select().from(salesOrders).where(eq(salesOrders.id, params.id)).limit(1);
       if (!salesOrder) throw new NotFoundError('Transaksi tidak ditemukan');
-      const items = await db.select().from(salesOrderItems).where(eq(salesOrderItems.salesOrderId, salesOrder.id));
+
+      const itemRows = await db
+        .select({
+          id: salesOrderItems.id,
+          qty: salesOrderItems.qty,
+          price: salesOrderItems.price,
+          lineSubtotal: salesOrderItems.lineSubtotal,
+          discountName: salesOrderItems.discountName,
+          discountAmount: salesOrderItems.discountAmount,
+          lineTotal: salesOrderItems.lineTotal,
+          sku: productVariants.sku,
+          color: productVariants.color,
+          size: productVariants.size,
+          productName: products.name,
+        })
+        .from(salesOrderItems)
+        .leftJoin(productVariants, eq(productVariants.id, salesOrderItems.variantId))
+        .leftJoin(products, eq(products.id, productVariants.productId))
+        .where(eq(salesOrderItems.salesOrderId, salesOrder.id));
+
+      let customerName: string | null = null;
+      if (salesOrder.customerId) {
+        const [customer] = await db.select({ name: customers.name }).from(customers).where(eq(customers.id, salesOrder.customerId)).limit(1);
+        customerName = customer?.name ?? null;
+      }
+
       const [settings] = await db.select().from(systemSettings).limit(1);
 
-      // TODO: render HTML/PDF struk siap-print memakai settings.businessName & receiptFooterNote.
-      return ok({ salesOrder, items, businessName: settings?.businessName, footerNote: settings?.receiptFooterNote });
+      return ok({
+        salesOrder,
+        items: itemRows,
+        customerName,
+        businessName: settings?.businessName ?? 'KaiNova ERP',
+        footerNote: settings?.receiptFooterNote ?? null,
+      });
     },
     { requireRole: ['OWNER', 'KASIR'] },
   );
