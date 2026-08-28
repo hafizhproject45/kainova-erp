@@ -1,10 +1,56 @@
 @import 'tailwindcss';
 
+/* Scan Flowbite Svelte component classes yang di-generate secara dinamis. */
+@source '../node_modules/flowbite-svelte/dist';
+
 @theme {
   --font-sans: system-ui, 'Segoe UI', Roboto, sans-serif;
+
+  /* KaiNova ERP palette — Popyshop
+     Primary  : Emerald / Deep Teal — identitas ERP, kesan bersih & profesional
+     Secondary: Warm Rose / Coral   — brand fashion Popyshop
+     Tertiary : Amber / Gold        — aksen, alert, status khusus, highlight */
+  --color-primary-50: #ecfdf5;
+  --color-primary-100: #d1fae5;
+  --color-primary-200: #a7f3d0;
+  --color-primary-300: #6ee7b7;
+  --color-primary-400: #34d399;
+  --color-primary-500: #10b981;
+  --color-primary-600: #059669;
+  --color-primary-700: #047857;
+  --color-primary-800: #065f46;
+  --color-primary-900: #064e3b;
+
+  --color-secondary-50: #fff1f2;
+  --color-secondary-100: #ffe4e6;
+  --color-secondary-200: #fecdd3;
+  --color-secondary-300: #fda4af;
+  --color-secondary-400: #fb7185;
+  --color-secondary-500: #f43f5e;
+  --color-secondary-600: #e11d48;
+  --color-secondary-700: #be123c;
+  --color-secondary-800: #9f1239;
+  --color-secondary-900: #881337;
+
+  --color-tertiary-50: #fffbeb;
+  --color-tertiary-100: #fef3c7;
+  --color-tertiary-200: #fde68a;
+  --color-tertiary-300: #fcd34d;
+  --color-tertiary-400: #fbbf24;
+  --color-tertiary-500: #f59e0b;
+  --color-tertiary-600: #d97706;
+  --color-tertiary-700: #b45309;
+  --color-tertiary-800: #92400e;
+  --color-tertiary-900: #78350f;
 }
 
 body {
   margin: 0;
   @apply bg-slate-50 text-slate-800 antialiased;
+}
+
+@media print {
+  .print\:hidden {
+    display: none !important;
+  }
 }

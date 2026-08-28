@@ -22,24 +22,24 @@ MVP 2 berfokus pada **Transformasi Visual, Standarisasi Navigation/Routing, Form
 
 Goal: Mengintegrasikan Flowbite Svelte, membuat modul utilitas *formatting* ribuan/mata uang, mengatur skema warna Popyshop, merancang arsitektur routing (halaman terpisah Add/Edit), dan membuat *Standardized Table Component*.
 
-* [ ] **Setup & Config Flowbite Svelte:**
-  * [ ] Install `flowbite-svelte`, `flowbite`, dan package icon terkait (`flowbite-svelte-icons` / `lucide-svelte`).
-  * [ ] Konfigurasi `tailwind.config.cjs` untuk mendukung plugin Flowbite dan skema warna disesuaikan.
-* [ ] **Frontend Number & Currency Formatting Utilities (`src/lib/utils/formatters.ts`):**
-  * [ ] Function `formatRupiah(amount: number | string)` ➔ Mengubah angka menjadi format mata uang Rupiah konsisten (`Rp 150.000`).
-  * [ ] Function `formatNumber(value: number | string)` ➔ Mengubah angka biasa/qty menjadi format dengan delimiter ribuan (`1.500`).
-  * [ ] Helper input parser `parseNumber(formattedValue: string)` ➔ Mengubah string ber-delimiter kembali menjadi number murni saat dikirim ke backend.
-* [ ] **Design Tokens & Palette Customization:**
-  * [ ] **Primary Color:** Emerald / Deep Teal (identitas KaiNova ERP & kesan bersih/profesional).
-  * [ ] **Secondary Color:** Warm Rose / Coral (brand fashion Popyshop).
-  * [ ] **Tertiary Color:** Amber / Gold (penanda aksen, alert, status khusus, dan highlight).
-* [ ] **Base UI Component Library (Reusable Wrappers):**
-  * [ ] `<AppButton>`: Tombol Flowbite dengan varian `primary`, `secondary`, `outline`, `danger`, bawaan icon + indikator loading.
-  * [ ] `<AppInput>`: Wrapper input teks/angka Flowbite dengan prop `required` (menampilkan **bintang merah `*`** pada label), helper error text, serta integrasi pemformatan ribuan *on-the-fly* untuk input nominal.
-  * [ ] `<AppSelect>`: Dropdown Flowbite dengan penanda `required` (`*`) dan fitur pencarian.
-  * [ ] `<AppTable>`: Standardized Table Wrapper berbasis Flowbite `Table` yang mendukung *striped rows*, *hover effects*, *sticky header*, *pagination*, dan *action column*.
-  * [ ] `<AppBadge>`: Badge status konsisten (`POSTED`, `DRAFT`, `FAST_MOVING`, `DEAD_STOCK`) untuk diletakkan di dalam sel tabel.
-  * [ ] `<AppCard>`: Container card untuk form pembungkus di halaman dedicated Add/Edit.
+* [x] **Setup & Config Flowbite Svelte:**
+  * [x] Install `flowbite-svelte`, `flowbite`, dan package icon terkait (`flowbite-svelte-icons` / `lucide-svelte`).
+  * [x] Konfigurasi Tailwind v4 (`@source`, `@theme`) untuk mendukung plugin Flowbite dan skema warna disesuaikan (proyek ini pakai Tailwind v4 CSS-based config, bukan `tailwind.config.cjs`).
+* [x] **Frontend Number & Currency Formatting Utilities (`src/lib/utils/formatters.ts`):**
+  * [x] Function `formatRupiah(amount: number | string)` ➔ Mengubah angka menjadi format mata uang Rupiah konsisten (`Rp 150.000`).
+  * [x] Function `formatNumber(value: number | string)` ➔ Mengubah angka biasa/qty menjadi format dengan delimiter ribuan (`1.500`).
+  * [x] Helper input parser `parseNumber(formattedValue: string)` ➔ Mengubah string ber-delimiter kembali menjadi number murni saat dikirim ke backend.
+* [x] **Design Tokens & Palette Customization:**
+  * [x] **Primary Color:** Emerald / Deep Teal (identitas KaiNova ERP & kesan bersih/profesional).
+  * [x] **Secondary Color:** Warm Rose / Coral (brand fashion Popyshop).
+  * [x] **Tertiary Color:** Amber / Gold (penanda aksen, alert, status khusus, dan highlight).
+* [x] **Base UI Component Library (Reusable Wrappers):**
+  * [x] `<AppButton>`: Tombol Flowbite dengan varian `primary`, `secondary`, `outline`, `danger`, bawaan icon + indikator loading.
+  * [x] `<AppInput>`: Wrapper input teks/angka Flowbite dengan prop `required` (menampilkan **bintang merah `*`** pada label), helper error text, serta integrasi pemformatan ribuan *on-the-fly* untuk input nominal.
+  * [x] `<AppSelect>`: Dropdown Flowbite dengan penanda `required` (`*`) dan fitur pencarian.
+  * [x] `<AppTable>`: Standardized Table Wrapper berbasis Flowbite `Table` yang mendukung *striped rows*, *hover effects*, *sticky header*, *pagination*, dan *action column*.
+  * [x] `<AppBadge>`: Badge status konsisten (`POSTED`, `DRAFT`, `FAST_MOVING`, `DEAD_STOCK`) untuk diletakkan di dalam sel tabel.
+  * [x] `<AppCard>`: Container card untuk form pembungkus di halaman dedicated Add/Edit.
 
 ---
 
