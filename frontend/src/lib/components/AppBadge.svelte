@@ -6,17 +6,19 @@
 
   let { status, class: className = '' }: { status: Status; class?: string } = $props();
 
-  const colorByStatus: Record<string, 'green' | 'gray' | 'primary' | 'red' | 'yellow' | 'secondary'> = {
+  // 'amber' dipakai (bukan 'yellow' bawaan Flowbite) supaya badge alert/highlight
+  // konsisten dengan token Tertiary KaiNova (Amber/Gold) — lihat app.css @theme.
+  const colorByStatus: Record<string, 'green' | 'gray' | 'primary' | 'red' | 'amber' | 'secondary'> = {
     POSTED: 'green',
     PAID: 'green',
     RECEIVED: 'green',
     Aktif: 'green',
     DRAFT: 'gray',
-    PENDING: 'yellow',
+    PENDING: 'amber',
     Nonaktif: 'gray',
     FAST_MOVING: 'primary',
     DEAD_STOCK: 'red',
-    ROP_ALERT: 'yellow',
+    ROP_ALERT: 'amber',
     CANCELLED: 'secondary',
   };
 
