@@ -6,6 +6,7 @@
   import Dashboard from './routes/Dashboard.svelte';
   import MasterDataList from './routes/master-data/MasterDataList.svelte';
   import MasterDataForm from './routes/master-data/MasterDataForm.svelte';
+  import VariantMatrixForm from './routes/master-data/VariantMatrixForm.svelte';
   import Pos from './routes/Pos.svelte';
   import SalesHistory from './routes/SalesHistory.svelte';
   import PurchasingList from './routes/purchasing/PurchasingList.svelte';
@@ -20,6 +21,7 @@
   const routes = {
     '/': Dashboard,
     '/master-data': MasterDataList,
+    '/master-data/variants/matrix': VariantMatrixForm,
     '/master-data/:tab': MasterDataList,
     '/master-data/:tab/create': MasterDataForm,
     '/master-data/:tab/:id/edit': MasterDataForm,

@@ -45,7 +45,8 @@
 
   onMount(async () => {
     try {
-      products = await api.get<Product[]>('/products');
+      // MVP 3 Phase 1: Strict Filtering — hanya produk aktif yang bisa disesuaikan stoknya.
+      products = await api.get<Product[]>('/products', { isActive: true });
     } catch (err) {
       errorMessage = err instanceof ApiClientError ? err.message : 'Gagal memuat data';
     }
@@ -55,7 +56,7 @@
     productId;
     variantId = '';
     variants = [];
-    if (productId) api.get<Variant[]>(`/products/${productId}/variants`).then((v) => (variants = v));
+    if (productId) api.get<Variant[]>(`/products/${productId}/variants`, { isActive: true }).then((v) => (variants = v));
   });
 
   function addItem() {

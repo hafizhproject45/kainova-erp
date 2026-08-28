@@ -44,8 +44,9 @@
 
   onMount(async () => {
     try {
-      suppliers = await api.get<Supplier[]>('/suppliers');
-      products = await api.get<Product[]>('/products');
+      // MVP 3 Phase 1: Strict Filtering — hanya supplier/produk aktif yang bisa dipilih di pengajuan pembelian.
+      suppliers = await api.get<Supplier[]>('/suppliers', { isActive: true });
+      products = await api.get<Product[]>('/products', { isActive: true });
     } catch (err) {
       errorMessage = err instanceof ApiClientError ? err.message : 'Gagal memuat data';
     }
@@ -55,7 +56,7 @@
     productId;
     variantId = '';
     variants = [];
-    if (productId) api.get<Variant[]>(`/products/${productId}/variants`).then((v) => (variants = v));
+    if (productId) api.get<Variant[]>(`/products/${productId}/variants`, { isActive: true }).then((v) => (variants = v));
   });
 
   function addItem() {

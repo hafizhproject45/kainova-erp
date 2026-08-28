@@ -24,12 +24,11 @@
   const categoryNameById = $derived(new Map(categories.map((c) => [c.id, c.name])));
   const uomNameById = $derived(new Map(uoms.map((u) => [u.id, u.name])));
 
-  // Baris yang sudah diperkaya untuk ditampilkan di AppTable: status boolean -> label,
-  // produk -> nama kategori/uom hasil lookup (backend hanya kirim id).
+  // Baris yang sudah diperkaya untuk ditampilkan di AppTable: produk -> nama kategori/uom
+  // hasil lookup (backend hanya kirim id). Kolom Status pakai Toggle langsung dari isActive.
   const displayRows = $derived(
     rows.map((row) => {
       const enriched: Record<string, unknown> = { ...row };
-      if ('isActive' in row) enriched.statusLabel = row.isActive ? 'Aktif' : 'Nonaktif';
       if (activeTab === 'products') {
         enriched.categoryName = categoryNameById.get(String(row.categoryId)) ?? '-';
         enriched.uomName = row.uomId ? (uomNameById.get(String(row.uomId)) ?? '-') : '-';
@@ -80,12 +79,30 @@
       errorMessage = err instanceof ApiClientError ? err.message : 'Gagal menghapus data';
     }
   }
+
+  // Inline Quick Toggle (MVP 3 Phase 1) — update optimistik + PATCH /:id/status, rollback jika gagal.
+  async function handleToggleActive(row: Record<string, unknown>, next: boolean) {
+    const id = String(row.id);
+    const prev = rows;
+    rows = rows.map((r) => (String(r.id) === id ? { ...r, isActive: next } : r));
+    errorMessage = '';
+    try {
+      await api.patch(`${tabConfig(activeTab).apiPath}/${id}/status`, { isActive: next });
+    } catch (err) {
+      rows = prev;
+      errorMessage = err instanceof ApiClientError ? err.message : 'Gagal mengubah status';
+    }
+  }
 </script>
 
 <div class="mb-4 flex items-center justify-between">
   <h1 class="text-lg font-semibold text-slate-900">Master Data</h1>
-  <AppButton onclick={() => push(`/master-data/${activeTab}/create`)}>
-    <PlusOutline class="me-1.5 h-4 w-4" /> Tambah {tabConfig(activeTab).label}
+  <AppButton
+    onclick={() =>
+      push(activeTab === 'variants' ? '/master-data/variants/matrix' : `/master-data/${activeTab}/create`)}
+  >
+    <PlusOutline class="me-1.5 h-4 w-4" />
+    {activeTab === 'variants' ? 'Matrix Generator' : `Tambah ${tabConfig(activeTab).label}`}
   </AppButton>
 </div>
 
@@ -121,7 +138,7 @@
 
   {#if errorMessage}<p class="mb-3 text-sm text-red-600">{errorMessage}</p>{/if}
 
-  <AppTable columns={columnsFor(activeTab)} rows={filteredRows} {loading}>
+  <AppTable columns={columnsFor(activeTab)} rows={filteredRows} {loading} onToggleActive={handleToggleActive}>
     {#snippet rowActions(row)}
       <button
         aria-label="Edit"
