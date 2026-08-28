@@ -6,6 +6,7 @@ import { authPlugin } from '../auth';
 import { ok } from '../../utils/http';
 
 const ROP_LOOKBACK_DAYS = 30;
+const TREND_DAYS = 7;
 
 export const dashboardRoutes = new Elysia({ prefix: '/dashboard' }).use(authPlugin).get(
   '/summary',
@@ -72,11 +73,33 @@ export const dashboardRoutes = new Elysia({ prefix: '/dashboard' }).use(authPlug
       })
       .filter((v) => v.totalStock <= v.rop);
 
+    // Tren omset 7 hari terakhir (termasuk hari ini) untuk chart di dashboard.
+    const trendStart = new Date(startOfDay);
+    trendStart.setDate(trendStart.getDate() - (TREND_DAYS - 1));
+    const trendOrders = await db
+      .select({ createdAt: salesOrders.createdAt, grandTotal: salesOrders.grandTotal })
+      .from(salesOrders)
+      .where(and(gte(salesOrders.createdAt, trendStart), lt(salesOrders.createdAt, endOfDay)));
+
+    const revenueByDate = new Map<string, number>();
+    for (const row of trendOrders) {
+      const key = row.createdAt.toISOString().slice(0, 10);
+      revenueByDate.set(key, (revenueByDate.get(key) ?? 0) + Number(row.grandTotal));
+    }
+    const revenueTrend: Array<{ date: string; revenue: number }> = [];
+    for (let i = TREND_DAYS - 1; i >= 0; i--) {
+      const d = new Date(startOfDay);
+      d.setDate(d.getDate() - i);
+      const key = d.toISOString().slice(0, 10);
+      revenueTrend.push({ date: key, revenue: revenueByDate.get(key) ?? 0 });
+    }
+
     return ok({
       todayRevenue,
       todayTransactions: todayOrders.length,
       grossProfitToday,
       lowStockAlerts,
+      revenueTrend,
     });
   },
   { query: t.Object({ date: t.Optional(t.String()) }), requireRole: ['OWNER'] },
