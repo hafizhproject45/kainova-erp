@@ -98,7 +98,7 @@
 {#if loading}
   <p class="text-sm text-slate-500">Memuat...</p>
 {:else}
-  <form onsubmit={handleSave} class="grid max-w-3xl grid-cols-1 gap-6">
+  <form onsubmit={handleSave} class="grid grid-cols-1 gap-6 lg:grid-cols-2">
     <AppCard title="Informasi Bisnis">
       <div class="flex items-start gap-3">
         <BuildingOutline class="mt-7 h-5 w-5 shrink-0 text-slate-400" />
@@ -166,13 +166,15 @@
       </div>
     </AppCard>
 
-    {#if errorMessage}<p class="text-sm text-red-600">{errorMessage}</p>{/if}
-    {#if successMessage}<p class="text-sm text-primary-700">{successMessage}</p>{/if}
+    <div class="lg:col-span-2">
+      {#if errorMessage}<p class="mb-3 text-sm text-red-600">{errorMessage}</p>{/if}
+      {#if successMessage}<p class="mb-3 text-sm text-primary-700">{successMessage}</p>{/if}
 
-    <div class="flex justify-end">
-      <AppButton type="submit" loading={saving}>
-        <FloppyDiskAltOutline class="me-1.5 h-4 w-4" /> Simpan Pengaturan
-      </AppButton>
+      <div class="flex justify-end">
+        <AppButton type="submit" loading={saving}>
+          <FloppyDiskAltOutline class="me-1.5 h-4 w-4" /> Simpan Pengaturan
+        </AppButton>
+      </div>
     </div>
   </form>
 {/if}
