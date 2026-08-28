@@ -31,6 +31,30 @@ export const productsRoutes = new Elysia()
       ),
     { requireRole: ['OWNER', 'GUDANG', 'KASIR'] },
   )
+  .get(
+    '/product-variants/by-sku/:sku',
+    async ({ params }) => {
+      // Dipakai POS untuk scan barcode: SKU di-generate & di-print sebagai barcode (lihat PRODUCT_KNOWLEDGE.md §2).
+      const [row] = await db
+        .select({
+          id: productVariants.id,
+          productId: productVariants.productId,
+          sku: productVariants.sku,
+          color: productVariants.color,
+          size: productVariants.size,
+          price: productVariants.price,
+          totalStock: productVariants.totalStock,
+          productName: products.name,
+        })
+        .from(productVariants)
+        .innerJoin(products, eq(products.id, productVariants.productId))
+        .where(and(eq(productVariants.sku, params.sku), isNull(productVariants.deletedAt)))
+        .limit(1);
+      if (!row) throw new NotFoundError('SKU tidak ditemukan');
+      return ok(row);
+    },
+    { requireRole: ['OWNER', 'GUDANG', 'KASIR'] },
+  )
   .put(
     '/products/:id',
     async ({ params, body }) => {

@@ -13,7 +13,7 @@ Goal: Membangun fondasi sistem KaiNova, autentikasi, RBAC, Settings dasar, dan s
 * [x] Modul Master Data: Kategori, Parent Product & Matrix Variant SKU Generator. *(backend + frontend, generator SKU masih versi sederhana — `TODO` di kode)*
 * [x] Modul Master Data: Customer, Supplier. *(backend + frontend)*
 * [x] Modul Master Data: Pajak (PPN/PPh) & Diskon (persentase/nominal). *(backend + frontend)*
-* [~] Svelte UI: halaman CRUD Master Data (tabel + search + filter) untuk seluruh entitas di atas. *(Create + List + Edit + Delete sudah jalan untuk Kategori, Supplier, Customer, Pajak, Diskon, dan sekarang juga Produk (`PUT`/`DELETE /products/:id`, cascade soft-delete ke varian) & Varian SKU (`PUT`/`DELETE /product-variants/:id`, panel "Lihat SKU" expand per baris produk di tab Produk & SKU) — backend diverifikasi end-to-end lewat `curl` (update, delete varian tunggal, delete produk cascade ke sisa varian, variant/product yang sudah dihapus tidak lagi muncul di listing). `product_variants` sekarang punya kolom `deleted_at` (migration `0002_optimal_vivisector.sql`, sudah diterapkan) dan query ROP alert di dashboard sudah difilter supaya varian terhapus tidak ikut muncul. `typecheck`/`svelte-check` bersih. Belum ada search/filter tabel di semua tab — itu masih sisa pekerjaan.)*
+* [x] Svelte UI: halaman CRUD Master Data (tabel + search + filter) untuk seluruh entitas di atas. *(Create + List + Edit + Delete sudah jalan untuk Kategori, Supplier, Customer, Pajak, Diskon, Produk (`PUT`/`DELETE /products/:id`, cascade soft-delete ke varian) & Varian SKU (`PUT`/`DELETE /product-variants/:id`, panel "Lihat SKU" expand per baris produk). Search box (client-side, semua kolom) + filter kategori (khusus tab Produk) ditambahkan di semua tab, diverifikasi lewat browser screenshot (4 produk → 1 hasil saat cari "Receipt"). `typecheck`/`svelte-check` bersih.)*
 
 ## Phase 2: Pembelian & Adjustment Stok (Sprint 2)
 
@@ -34,7 +34,7 @@ Goal: Menyelesaikan modul transaksi kasir Popyshop lengkap dengan pilihan diskon
 * [x] Invoice numbering atomik per channel+tanggal (`INV-{CHANNEL}-{YYYYMMDD}-{SEQ}`), teruji. *(item tambahan di luar draft roadmap awal, sudah selesai)*
 * [x] Pencatatan channel penjualan (POS toko fisik / marketplace) sebagai tag di `sales_orders.channel` — bukan integrasi API real ke Shopee/Tokopedia/TikTok (di luar scope MVP).
 * [x] Pemotongan stok real-time sesuai mode costing aktif (FIFO/Average) dari Settings. *(kedua mode jalan & teruji)*
-* [~] Svelte UI: Interface Kasir POS (Cart Management, pilih Customer opsional, pilih Diskon & Pajak dari dropdown master data). *(sudah jalan & teruji end-to-end; **belum ada scan barcode** dan **belum ada cetak struk/print receipt** — endpoint `/sales/:id/receipt` backend juga masih placeholder data mentah, belum format HTML/PDF siap cetak)*
+* [x] Svelte UI: Interface Kasir POS (Cart Management, pilih Customer opsional, pilih Diskon & Pajak dari dropdown master data). *(sudah jalan & teruji end-to-end. Cetak struk: `GET /sales/:id/receipt` join ke produk/varian/customer, halaman `/receipt/:id` render struk print-friendly + tombol Print, link "Cetak Struk" di layar sukses checkout. Scan barcode: endpoint baru `GET /product-variants/by-sku/:sku`, input "Scan Barcode" di atas form POS — Enter langsung menambah item ke keranjang qty 1, atau tampilkan "SKU tidak ditemukan" kalau salah scan. Semua diverifikasi end-to-end lewat curl + screenshot/JS-dispatch browser.)*
 
 ## Phase 4: Dashboard & Laporan (Sprint 4)
 

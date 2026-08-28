@@ -56,6 +56,24 @@
   let qty = $state(1);
   let itemDiscountId = $state('');
 
+  // --- Scan barcode (SKU) ---
+  let barcodeInput = $state('');
+  let barcodeError = $state('');
+
+  async function handleBarcodeScan(event: KeyboardEvent) {
+    if (event.key !== 'Enter') return;
+    const sku = barcodeInput.trim();
+    if (!sku) return;
+    barcodeError = '';
+    try {
+      const variant = await api.get<Variant & { sku: string }>(`/product-variants/by-sku/${encodeURIComponent(sku)}`);
+      cart = [...cart, { variantId: variant.id, sku: variant.sku, price: Number(variant.price), qty: 1, discountId: '' }];
+      barcodeInput = '';
+    } catch (err) {
+      barcodeError = err instanceof ApiClientError ? err.message : `SKU "${sku}" tidak ditemukan`;
+    }
+  }
+
   let cart = $state<CartItem[]>([]);
   let options = $state<CheckoutOptions | null>(null);
   let orderDiscountId = $state('');
@@ -170,9 +188,21 @@
     </button>
   </div>
 {:else}
+  <div class="mb-6 rounded-xl border border-slate-200 bg-white p-5">
+    <h2 class="mb-3 text-sm font-semibold text-slate-800">Scan Barcode</h2>
+    <input
+      type="text"
+      bind:value={barcodeInput}
+      onkeydown={handleBarcodeScan}
+      placeholder="Scan atau ketik SKU lalu tekan Enter..."
+      class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm font-mono"
+    />
+    {#if barcodeError}<p class="mt-2 text-sm text-red-600">{barcodeError}</p>{/if}
+  </div>
+
   <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
     <div class="rounded-xl border border-slate-200 bg-white p-5">
-      <h2 class="mb-3 text-sm font-semibold text-slate-800">Tambah Item</h2>
+      <h2 class="mb-3 text-sm font-semibold text-slate-800">Tambah Item Manual</h2>
       <div class="space-y-3">
         <select bind:value={selectedProductId} onchange={onProductChange} class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm">
           <option value="">Pilih Produk</option>
