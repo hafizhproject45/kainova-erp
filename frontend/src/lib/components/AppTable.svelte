@@ -2,8 +2,9 @@
   import { Table, TableHead, TableHeadCell, TableBody, TableBodyRow, TableBodyCell, Spinner } from 'flowbite-svelte';
   import type { Snippet } from 'svelte';
   import { formatNumber, formatRupiah } from '../utils/formatters';
+  import AppBadge from './AppBadge.svelte';
 
-  type ColumnFormat = 'text' | 'number' | 'currency';
+  type ColumnFormat = 'text' | 'number' | 'currency' | 'badge';
 
   export type AppTableColumn = {
     key: string;
@@ -115,7 +116,11 @@
           <TableBodyRow>
             {#each columns as col (col.key)}
               <TableBodyCell class={alignClass(col.align)}>
-                {formatCell(row[col.key], col.format)}
+                {#if col.format === 'badge'}
+                  <AppBadge status={String(row[col.key] ?? '')} />
+                {:else}
+                  {formatCell(row[col.key], col.format)}
+                {/if}
               </TableBodyCell>
             {/each}
             {#if rowActions}

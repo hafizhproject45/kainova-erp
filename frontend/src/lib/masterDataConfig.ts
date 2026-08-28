@@ -48,14 +48,14 @@ export function columnsFor(tab: TabKey): AppTableColumn[] {
         { key: 'name', label: 'Nama' },
         { key: 'type', label: 'Tipe' },
         { key: 'rate', label: 'Rate (%)', align: 'right', format: 'number' },
-        { key: 'statusLabel', label: 'Status' },
+        { key: 'statusLabel', label: 'Status', format: 'badge' },
       ];
     case 'discounts':
       return [
         { key: 'name', label: 'Nama' },
         { key: 'type', label: 'Tipe' },
         { key: 'value', label: 'Nilai', align: 'right', format: 'number' },
-        { key: 'statusLabel', label: 'Status' },
+        { key: 'statusLabel', label: 'Status', format: 'badge' },
       ];
   }
 }

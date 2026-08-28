@@ -9,7 +9,11 @@
   const colorByStatus: Record<string, 'green' | 'gray' | 'primary' | 'red' | 'yellow' | 'secondary'> = {
     POSTED: 'green',
     PAID: 'green',
+    RECEIVED: 'green',
+    Aktif: 'green',
     DRAFT: 'gray',
+    PENDING: 'yellow',
+    Nonaktif: 'gray',
     FAST_MOVING: 'primary',
     DEAD_STOCK: 'red',
     ROP_ALERT: 'yellow',

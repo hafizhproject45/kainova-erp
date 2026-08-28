@@ -70,19 +70,19 @@ Goal: Menambahkan Master Data UOM, mengubah arsitektur Master Data menjadi Dedic
 
 Goal: Menerapkan skema Data Tabel dan pemformatan angka di modul Pembelian, Adjustment Stok, dan Penjualan, serta memoles antarmuka POS Kasir.
 
-* [ ] **Table Standardization Across All Modules:**
-  * [ ] **Modul Pembelian:** Tabel Daftar Purchase Order (PO Number, Supplier, Total Amount [Rp], Status Badge, Aksi Detail/Receive).
-  * [ ] **Modul Adjustment Stok:** Tabel Daftar Stock Opname & Saldo Awal (Adjustment Code, Reason, Total Items, Status DRAFT/POSTED, Aksi Detail/Post).
-  * [ ] **Modul Penjualan:** Tabel Riwayat Transaksi Penjualan / Sales Orders (Invoice No, Customer, Payment Method, DPP [Rp], PPN [Rp], PPh [Rp], Grand Total [Rp], Aksi Print Struk).
-* [ ] **POS / Kasir Interactive Redesign:**
+* [~] **Table Standardization Across All Modules:**
+  * [x] **Modul Pembelian:** Tabel Daftar Purchase Order (No. PO — sintetis dari id karena tidak ada kolom sequence khusus, Supplier, Total [Rp], Status Badge, Aksi Terima Barang). Aksi "Detail" belum ada (belum ada endpoint `GET /purchase-orders/:id`).
+  * [x] **Modul Adjustment Stok:** Tabel Daftar Stock Opname & Saldo Awal (Kode — sintetis dari id, Alasan, Total Item, Status DRAFT/POSTED badge, Aksi Post). Aksi "Detail" belum ada (belum ada endpoint `GET /stock-adjustments/:id`).
+  * [ ] **Modul Penjualan:** Tabel Riwayat Transaksi Penjualan / Sales Orders — belum dikerjakan.
+* [ ] **POS / Kasir Interactive Redesign:** belum dikerjakan (masih pakai layout lama: form manual + tabel keranjang sederhana, sudah ada scan barcode & kalkulasi real-time dari MVP 1).
   * [ ] Visual Card Grid untuk item produk + Tabel Ringkasan Keranjang Belanja (*Cart Table*) di panel kanan (Harga & Subtotal diformat `formatRupiah`, mencantumkan Satuan UOM).
-  * [ ] Dropdown Customer, Diskon, & Pajak (PPN/PPh) berbasis Flowbite `Select` dengan ikon penanda & bintang merah `*`.
+  * [ ] Dropdown Customer, Diskon, & Pajak (PPN/PPh) berbasis `AppSelect` dengan ikon penanda & bintang merah `*`.
   * [ ] Display kalkulasi real-time Subtotal, Potongan Diskon, DPP, PPN, PPh, dan Grand Total ber-delimiter ribuan yang jelas.
-  * [ ] Fitur Scan Barcode (UI Focus input handler).
-  * [ ] Modal Preview Struk Pembayaran siap print (`window.print()`).
-* [ ] **Separate Pages for Transaction Forms:**
-  * [ ] Pembuatan PO berada di halaman dedicated: `/purchasing/create`.
-  * [ ] Pembuatan Stock Adjustment berada di halaman dedicated: `/inventory/adjustments/create`.
+  * [ ] Fitur Scan Barcode (UI Focus input handler) — sudah ada dari MVP 1, belum di-restyle.
+  * [ ] Modal Preview Struk Pembayaran siap print (`window.print()`) — saat ini masih redirect ke tab baru `/receipt/:id`, belum modal.
+* [x] **Separate Pages for Transaction Forms:**
+  * [x] Pembuatan PO berada di halaman dedicated: `/purchasing/create`.
+  * [x] Pembuatan Stock Adjustment berada di halaman dedicated: `/inventory/adjustments/create`.
 
 ---
 

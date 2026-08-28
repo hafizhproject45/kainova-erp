@@ -1,7 +1,7 @@
 import { Elysia, t } from 'elysia';
-import { and, eq, gte, lte } from 'drizzle-orm';
+import { and, eq, gte, inArray, lte } from 'drizzle-orm';
 import { db } from '../../config/database';
-import { inventoryBatches, productVariants, purchaseOrderItems, purchaseOrders } from '../../db/schema';
+import { inventoryBatches, productVariants, purchaseOrderItems, purchaseOrders, suppliers } from '../../db/schema';
 import { authPlugin } from '../auth';
 import { ok, NotFoundError } from '../../utils/http';
 
@@ -20,7 +20,30 @@ export const purchasingRoutes = new Elysia({ prefix: '/purchase-orders' })
         .select()
         .from(purchaseOrders)
         .where(conditions.length ? and(...conditions) : undefined);
-      return ok(rows);
+      if (rows.length === 0) return ok([]);
+
+      // Perkaya untuk tabel List (PO Number, Supplier, Total Amount) — dihitung di app
+      // level (bukan SQL join/aggregate) karena volume data POS kecil & lebih sederhana.
+      const poIds = rows.map((r) => r.id);
+      const supplierIds = [...new Set(rows.map((r) => r.supplierId))];
+      const [supplierRows, itemRows] = await Promise.all([
+        db.select({ id: suppliers.id, name: suppliers.name }).from(suppliers).where(inArray(suppliers.id, supplierIds)),
+        db.select().from(purchaseOrderItems).where(inArray(purchaseOrderItems.purchaseOrderId, poIds)),
+      ]);
+      const supplierNameById = new Map(supplierRows.map((s) => [s.id, s.name]));
+      const totalByPo = new Map<string, number>();
+      for (const item of itemRows) {
+        totalByPo.set(item.purchaseOrderId, (totalByPo.get(item.purchaseOrderId) ?? 0) + item.qty * Number(item.unitCost));
+      }
+
+      return ok(
+        rows.map((r) => ({
+          ...r,
+          poNumber: `PO-${r.id.slice(0, 8).toUpperCase()}`,
+          supplierName: supplierNameById.get(r.supplierId) ?? '-',
+          totalAmount: totalByPo.get(r.id) ?? 0,
+        })),
+      );
     },
     {
       query: t.Object({
