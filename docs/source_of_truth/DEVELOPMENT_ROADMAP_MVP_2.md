@@ -74,12 +74,12 @@ Goal: Menerapkan skema Data Tabel dan pemformatan angka di modul Pembelian, Adju
   * [x] **Modul Pembelian:** Tabel Daftar Purchase Order (No. PO — sintetis dari id karena tidak ada kolom sequence khusus, Supplier, Total [Rp], Status Badge, Aksi Terima Barang). Aksi "Detail" belum ada (belum ada endpoint `GET /purchase-orders/:id`).
   * [x] **Modul Adjustment Stok:** Tabel Daftar Stock Opname & Saldo Awal (Kode — sintetis dari id, Alasan, Total Item, Status DRAFT/POSTED badge, Aksi Post). Aksi "Detail" belum ada (belum ada endpoint `GET /stock-adjustments/:id`).
   * [ ] **Modul Penjualan:** Tabel Riwayat Transaksi Penjualan / Sales Orders — belum dikerjakan.
-* [ ] **POS / Kasir Interactive Redesign:** belum dikerjakan (masih pakai layout lama: form manual + tabel keranjang sederhana, sudah ada scan barcode & kalkulasi real-time dari MVP 1).
-  * [ ] Visual Card Grid untuk item produk + Tabel Ringkasan Keranjang Belanja (*Cart Table*) di panel kanan (Harga & Subtotal diformat `formatRupiah`, mencantumkan Satuan UOM).
-  * [ ] Dropdown Customer, Diskon, & Pajak (PPN/PPh) berbasis `AppSelect` dengan ikon penanda & bintang merah `*`.
-  * [ ] Display kalkulasi real-time Subtotal, Potongan Diskon, DPP, PPN, PPh, dan Grand Total ber-delimiter ribuan yang jelas.
-  * [ ] Fitur Scan Barcode (UI Focus input handler) — sudah ada dari MVP 1, belum di-restyle.
-  * [ ] Modal Preview Struk Pembayaran siap print (`window.print()`) — saat ini masih redirect ke tab baru `/receipt/:id`, belum modal.
+* [x] **POS / Kasir Interactive Redesign:**
+  * [x] Visual Card Grid untuk item produk (klik card → chip SKU per varian) + Tabel Ringkasan Keranjang Belanja di panel kanan dengan qty stepper (Harga & Subtotal diformat `formatRupiah`, mencantumkan Satuan UOM per baris).
+  * [x] Dropdown Customer, Diskon, & Pajak (PPN/PPh) berbasis `AppSelect`. Tidak ada field wajib di panel ini (semua opsional saat checkout), jadi tidak ada bintang merah `*` — sesuai aturan `AppSelect`/`AppInput` (bintang hanya muncul kalau `required`).
+  * [x] Display kalkulasi real-time Subtotal, Diskon, DPP, PPN, PPh, dan Grand Total ber-delimiter ribuan (dihitung ulang & divalidasi lagi oleh backend saat checkout).
+  * [x] Fitur Scan Barcode (input focus handler, dari MVP 1) — sudah di-restyle dengan ikon barcode.
+  * [x] Modal Preview Struk Pembayaran (Flowbite `Modal`) muncul setelah checkout sukses, tombol "Cetak Struk" membuka `/receipt/:id` (halaman print-ready `window.print()` yang sudah ada) di tab baru — bukan `window.print()` langsung di dalam modal.
 * [x] **Separate Pages for Transaction Forms:**
   * [x] Pembuatan PO berada di halaman dedicated: `/purchasing/create`.
   * [x] Pembuatan Stock Adjustment berada di halaman dedicated: `/inventory/adjustments/create`.
