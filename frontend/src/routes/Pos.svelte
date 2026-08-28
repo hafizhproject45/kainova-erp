@@ -1,10 +1,12 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { link } from 'svelte-spa-router';
   import { Modal } from 'flowbite-svelte';
   import {
     BarcodeOutline,
     CircleMinusOutline,
     CirclePlusOutline,
+    ClockOutline,
     PrinterOutline,
     ReceiptSolid,
     SearchOutline,
@@ -252,7 +254,16 @@
   }
 </script>
 
-<h1 class="mb-6 text-lg font-semibold text-slate-900">Penjualan (POS)</h1>
+<div class="mb-6 flex items-center justify-between">
+  <h1 class="text-lg font-semibold text-slate-900">Penjualan (POS)</h1>
+  <a
+    href="/pos/history"
+    use:link
+    class="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-100"
+  >
+    <ClockOutline class="h-4 w-4" /> Riwayat Transaksi
+  </a>
+</div>
 
 <div class="mb-6 rounded-xl border border-slate-200 bg-white p-4">
   <div class="relative">

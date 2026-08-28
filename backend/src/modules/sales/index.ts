@@ -1,5 +1,5 @@
 import { Elysia, t } from 'elysia';
-import { and, asc, eq, gt, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gt, gte, lte, sql } from 'drizzle-orm';
 import { db } from '../../config/database';
 import {
   customers,
@@ -51,6 +51,46 @@ function calcDiscount(type: 'PERCENTAGE' | 'NOMINAL', value: number, base: numbe
 
 export const salesRoutes = new Elysia({ prefix: '/sales' })
   .use(authPlugin)
+  .get(
+    '/orders',
+    async ({ query }) => {
+      // Riwayat transaksi penjualan (Phase 3 MVP 2) — dipakai tabel List di /pos/history & Laporan Penjualan.
+      const conditions = [
+        query.from ? gte(salesOrders.createdAt, new Date(query.from)) : undefined,
+        query.to ? lte(salesOrders.createdAt, new Date(query.to)) : undefined,
+        query.payment_method ? eq(salesOrders.paymentMethod, query.payment_method) : undefined,
+      ].filter(Boolean);
+
+      const rows = await db
+        .select({
+          id: salesOrders.id,
+          invoiceNumber: salesOrders.invoiceNumber,
+          channel: salesOrders.channel,
+          customerId: salesOrders.customerId,
+          paymentMethod: salesOrders.paymentMethod,
+          dpp: salesOrders.dpp,
+          ppnAmount: salesOrders.ppnAmount,
+          pphAmount: salesOrders.pphAmount,
+          grandTotal: salesOrders.grandTotal,
+          createdAt: salesOrders.createdAt,
+          customerName: customers.name,
+        })
+        .from(salesOrders)
+        .leftJoin(customers, eq(customers.id, salesOrders.customerId))
+        .where(conditions.length ? and(...conditions) : undefined)
+        .orderBy(desc(salesOrders.createdAt));
+
+      return ok(rows);
+    },
+    {
+      query: t.Object({
+        from: t.Optional(t.String()),
+        to: t.Optional(t.String()),
+        payment_method: t.Optional(t.String()),
+      }),
+      requireRole: ['OWNER', 'KASIR'],
+    },
+  )
   .get(
     '/checkout-options',
     async () => {

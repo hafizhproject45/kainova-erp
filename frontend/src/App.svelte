@@ -7,6 +7,7 @@
   import MasterDataList from './routes/master-data/MasterDataList.svelte';
   import MasterDataForm from './routes/master-data/MasterDataForm.svelte';
   import Pos from './routes/Pos.svelte';
+  import SalesHistory from './routes/SalesHistory.svelte';
   import PurchasingList from './routes/purchasing/PurchasingList.svelte';
   import PurchasingCreate from './routes/purchasing/PurchasingCreate.svelte';
   import AdjustmentList from './routes/inventory/AdjustmentList.svelte';
@@ -23,6 +24,7 @@
     '/master-data/:tab/create': MasterDataForm,
     '/master-data/:tab/:id/edit': MasterDataForm,
     '/pos': Pos,
+    '/pos/history': SalesHistory,
     '/purchasing': PurchasingList,
     '/purchasing/create': PurchasingCreate,
     '/stock-adjustment': AdjustmentList,

@@ -70,10 +70,10 @@ Goal: Menambahkan Master Data UOM, mengubah arsitektur Master Data menjadi Dedic
 
 Goal: Menerapkan skema Data Tabel dan pemformatan angka di modul Pembelian, Adjustment Stok, dan Penjualan, serta memoles antarmuka POS Kasir.
 
-* [~] **Table Standardization Across All Modules:**
+* [x] **Table Standardization Across All Modules:**
   * [x] **Modul Pembelian:** Tabel Daftar Purchase Order (No. PO — sintetis dari id karena tidak ada kolom sequence khusus, Supplier, Total [Rp], Status Badge, Aksi Terima Barang). Aksi "Detail" belum ada (belum ada endpoint `GET /purchase-orders/:id`).
   * [x] **Modul Adjustment Stok:** Tabel Daftar Stock Opname & Saldo Awal (Kode — sintetis dari id, Alasan, Total Item, Status DRAFT/POSTED badge, Aksi Post). Aksi "Detail" belum ada (belum ada endpoint `GET /stock-adjustments/:id`).
-  * [ ] **Modul Penjualan:** Tabel Riwayat Transaksi Penjualan / Sales Orders — belum dikerjakan.
+  * [x] **Modul Penjualan:** Tabel Riwayat Transaksi Penjualan / Sales Orders (Invoice No, Customer, Payment Method, DPP [Rp], PPN [Rp], PPh [Rp], Grand Total [Rp], Aksi Print Struk) di halaman baru `/pos/history`, diakses via tombol "Riwayat Transaksi" di header POS.
 * [x] **POS / Kasir Interactive Redesign:**
   * [x] Visual Card Grid untuk item produk (klik card → chip SKU per varian) + Tabel Ringkasan Keranjang Belanja di panel kanan dengan qty stepper (Harga & Subtotal diformat `formatRupiah`, mencantumkan Satuan UOM per baris).
   * [x] Dropdown Customer, Diskon, & Pajak (PPN/PPh) berbasis `AppSelect`. Tidak ada field wajib di panel ini (semua opsional saat checkout), jadi tidak ada bintang merah `*` — sesuai aturan `AppSelect`/`AppInput` (bintang hanya muncul kalau `required`).
