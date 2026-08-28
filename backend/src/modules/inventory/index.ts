@@ -1,11 +1,204 @@
 import { Elysia, t } from 'elysia';
-import { and, asc, eq, gt, gte, inArray, lte, sql } from 'drizzle-orm';
+import { and, asc, eq, gt, gte, inArray, isNull, lte, sql } from 'drizzle-orm';
 import { db } from '../../config/database';
-import { inventoryBatches, productVariants, stockAdjustmentItems, stockAdjustments } from '../../db/schema';
+import {
+  inventoryBatches,
+  productVariants,
+  products,
+  salesOrderItems,
+  salesOrders,
+  stockAdjustmentItems,
+  stockAdjustments,
+  uoms,
+} from '../../db/schema';
 import { authPlugin, type AuthPayload } from '../auth';
-import { ok, NotFoundError, BusinessRuleError } from '../../utils/http';
+import { ok, NotFoundError, BusinessRuleError, ValidationError } from '../../utils/http';
 
-export const inventoryRoutes = new Elysia({ prefix: '/stock-adjustments' })
+// MVP 3 Phase 3: Restrukturisasi Modul Inventory — 2 sub-module dedicated:
+// Stok Produk (Current Stock Summary + Stock Ledger historikal) & Adjustment Stok.
+
+// ---------------------------------------------------------------------------
+// Sub-Module 1: Stok Produk (Current Stock Summary & Stock Ledger)
+// ---------------------------------------------------------------------------
+
+const stockRoutes = new Elysia()
+  .use(authPlugin)
+  .get(
+    '/inventory/stock-summary',
+    async ({ query }) => {
+      // Current Stock Summary Panel — daftar SKU (default hanya aktif, Strict Filtering
+      // MVP 3 Phase 1), kuantitas stok real-time & total nominal valuasi (HPP rata-rata).
+      const conditions = [isNull(productVariants.deletedAt)];
+      if (query.is_active !== undefined) conditions.push(eq(productVariants.isActive, query.is_active === 'true'));
+
+      const rows = await db
+        .select({
+          id: productVariants.id,
+          sku: productVariants.sku,
+          color: productVariants.color,
+          size: productVariants.size,
+          totalStock: productVariants.totalStock,
+          avgCost: productVariants.avgCost,
+          isActive: productVariants.isActive,
+          productName: products.name,
+          uomName: uoms.name,
+        })
+        .from(productVariants)
+        .innerJoin(products, eq(products.id, productVariants.productId))
+        .leftJoin(uoms, eq(uoms.id, products.uomId))
+        .where(and(...conditions));
+
+      return ok(
+        rows.map((r) => ({
+          ...r,
+          totalValuation: r.totalStock * Number(r.avgCost),
+        })),
+      );
+    },
+    { query: t.Object({ is_active: t.Optional(t.String()) }), requireRole: ['OWNER', 'GUDANG'] },
+  )
+  .get(
+    '/inventory/stock-ledger',
+    async ({ query }) => {
+      // Stock Ledger (Kartu Stok Historikal) — audit trail kronologis satu SKU, digabung
+      // dari 3 sumber transaksi yang sudah final (Pembelian diterima, Penjualan, Adjustment
+      // POSTED), diurut waktu, lalu dihitung Saldo Akhir Qty berjalan (running balance).
+      if (!query.variant_id) throw new ValidationError('variant_id wajib diisi untuk menampilkan Kartu Stok');
+
+      const [variant] = await db
+        .select({
+          id: productVariants.id,
+          sku: productVariants.sku,
+          color: productVariants.color,
+          size: productVariants.size,
+          productName: products.name,
+        })
+        .from(productVariants)
+        .innerJoin(products, eq(products.id, productVariants.productId))
+        .where(eq(productVariants.id, query.variant_id))
+        .limit(1);
+      if (!variant) throw new NotFoundError('Varian SKU tidak ditemukan');
+
+      const fromDate = query.from ? new Date(query.from) : undefined;
+      const toDate = query.to ? new Date(query.to) : undefined;
+      const inRange = (d: Date) => (!fromDate || d >= fromDate) && (!toDate || d <= toDate);
+
+      type Movement = {
+        at: Date;
+        type: 'PEMBELIAN' | 'PENJUALAN' | 'ADJUSTMENT';
+        reference: string;
+        qtyIn: number;
+        qtyOut: number;
+        unitCost: number;
+      };
+      const movements: Movement[] = [];
+
+      const purchaseRows = await db
+        .select({
+          qty: inventoryBatches.initialQty,
+          unitCost: inventoryBatches.unitCost,
+          receivedAt: inventoryBatches.receivedAt,
+          sourceId: inventoryBatches.sourceId,
+        })
+        .from(inventoryBatches)
+        .where(and(eq(inventoryBatches.variantId, variant.id), eq(inventoryBatches.sourceType, 'PURCHASE')));
+      for (const row of purchaseRows) {
+        movements.push({
+          at: row.receivedAt,
+          type: 'PEMBELIAN',
+          reference: row.sourceId ? `PO-${row.sourceId.slice(0, 8).toUpperCase()}` : '-',
+          qtyIn: row.qty,
+          qtyOut: 0,
+          unitCost: Number(row.unitCost),
+        });
+      }
+
+      const saleRows = await db
+        .select({
+          qty: salesOrderItems.qty,
+          costOfGoods: salesOrderItems.costOfGoods,
+          createdAt: salesOrders.createdAt,
+          invoiceNumber: salesOrders.invoiceNumber,
+        })
+        .from(salesOrderItems)
+        .innerJoin(salesOrders, eq(salesOrders.id, salesOrderItems.salesOrderId))
+        .where(eq(salesOrderItems.variantId, variant.id));
+      for (const row of saleRows) {
+        movements.push({
+          at: row.createdAt,
+          type: 'PENJUALAN',
+          reference: row.invoiceNumber,
+          qtyIn: 0,
+          qtyOut: row.qty,
+          unitCost: row.qty > 0 ? Number(row.costOfGoods) / row.qty : 0,
+        });
+      }
+
+      const adjustmentRows = await db
+        .select({
+          differenceQty: stockAdjustmentItems.differenceQty,
+          unitCost: stockAdjustmentItems.unitCost,
+          adjustmentId: stockAdjustmentItems.adjustmentId,
+          postedAt: stockAdjustments.postedAt,
+        })
+        .from(stockAdjustmentItems)
+        .innerJoin(stockAdjustments, eq(stockAdjustments.id, stockAdjustmentItems.adjustmentId))
+        .where(and(eq(stockAdjustmentItems.variantId, variant.id), eq(stockAdjustments.status, 'POSTED')));
+      for (const row of adjustmentRows) {
+        if (!row.postedAt || row.differenceQty === 0) continue;
+        movements.push({
+          at: row.postedAt,
+          type: 'ADJUSTMENT',
+          reference: `ADJ-${row.adjustmentId.slice(0, 8).toUpperCase()}`,
+          qtyIn: row.differenceQty > 0 ? row.differenceQty : 0,
+          qtyOut: row.differenceQty < 0 ? Math.abs(row.differenceQty) : 0,
+          unitCost: Number(row.unitCost ?? 0),
+        });
+      }
+
+      movements.sort((a, b) => a.at.getTime() - b.at.getTime());
+
+      // Saldo Akhir Qty dihitung berjalan dari histori PENUH (tidak dipotong filter tanggal)
+      // supaya angkanya tetap akurat meski user mempersempit rentang tampilan.
+      let runningBalance = 0;
+      const ledger = movements.map((m) => {
+        runningBalance += m.qtyIn - m.qtyOut;
+        return {
+          date: m.at.toISOString(),
+          type: m.type,
+          reference: m.reference,
+          qtyIn: m.qtyIn,
+          qtyOut: m.qtyOut,
+          endingBalance: runningBalance,
+          unitCost: m.unitCost,
+          totalValuation: (m.qtyIn || m.qtyOut) * m.unitCost,
+        };
+      });
+
+      const filtered = fromDate || toDate ? ledger.filter((row) => inRange(new Date(row.date))) : ledger;
+
+      return ok({
+        variant: {
+          id: variant.id,
+          sku: variant.sku,
+          productName: variant.productName,
+          color: variant.color,
+          size: variant.size,
+        },
+        ledger: filtered,
+      });
+    },
+    {
+      query: t.Object({ variant_id: t.Optional(t.String()), from: t.Optional(t.String()), to: t.Optional(t.String()) }),
+      requireRole: ['OWNER', 'GUDANG'],
+    },
+  );
+
+// ---------------------------------------------------------------------------
+// Sub-Module 2: Adjustment Stok (Stock Opname & Saldo Awal)
+// ---------------------------------------------------------------------------
+
+const stockAdjustmentsRoutes = new Elysia({ prefix: '/inventory/stock-adjustments' })
   .use(authPlugin)
   .get(
     '',
@@ -98,7 +291,9 @@ export const inventoryRoutes = new Elysia({ prefix: '/stock-adjustments' })
     '/:id/post',
     async ({ params }) => {
       // Satu transaksi utuh: kalau ada batch/variant yang gagal di-update, seluruh
-      // posting di-rollback — tidak boleh ada adjustment "setengah POSTED".
+      // posting di-rollback — tidak boleh ada adjustment "setengah POSTED". Begitu POSTED,
+      // baris ini otomatis muncul di Stock Ledger (dibaca langsung dari tabel ini, bukan
+      // tabel ledger terpisah) — memenuhi syarat "integrasi otomatis" MVP 3 Phase 3.
       return await db.transaction(async (tx) => {
         const [adjustment] = await tx.select().from(stockAdjustments).where(eq(stockAdjustments.id, params.id)).limit(1);
         if (!adjustment) throw new NotFoundError('Adjustment stok tidak ditemukan');
@@ -179,3 +374,5 @@ export const inventoryRoutes = new Elysia({ prefix: '/stock-adjustments' })
     },
     { requireRole: ['OWNER'] },
   );
+
+export const inventoryRoutes = new Elysia().use(stockRoutes).use(stockAdjustmentsRoutes);

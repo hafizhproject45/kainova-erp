@@ -204,6 +204,7 @@ export const reportsRoutes = new Elysia({ prefix: '/reports' })
           sku: productVariants.sku,
           productName: products.name,
           totalStock: productVariants.totalStock,
+          avgCost: productVariants.avgCost,
           totalReceived: sql<number>`coalesce((select sum(${inventoryBatches.initialQty}) from ${inventoryBatches}
             where ${inventoryBatches.variantId} = ${productVariants.id}
             ${batchDateConds.length ? sql`and ${and(...batchDateConds)}` : sql``}), 0)`,
@@ -211,31 +212,150 @@ export const reportsRoutes = new Elysia({ prefix: '/reports' })
             inner join ${salesOrders} on ${salesOrders.id} = ${salesOrderItems.salesOrderId}
             where ${salesOrderItems.variantId} = ${productVariants.id}
             ${soldDateConds.length ? sql`and ${and(...soldDateConds)}` : sql``}), 0)`,
+          // Aging (MVP 3 Phase 4) — hari sejak pergerakan terakhir (masuk ATAU keluar), tanpa filter tanggal
+          // supaya benar-benar merefleksikan histori lengkap SKU, bukan hanya dalam rentang laporan.
+          lastMovementAt: sql<string | null>`greatest(
+            (select max(${inventoryBatches.receivedAt}) from ${inventoryBatches} where ${inventoryBatches.variantId} = ${productVariants.id}),
+            (select max(${salesOrders.createdAt}) from ${salesOrderItems}
+              inner join ${salesOrders} on ${salesOrders.id} = ${salesOrderItems.salesOrderId}
+              where ${salesOrderItems.variantId} = ${productVariants.id})
+          )`,
         })
         .from(productVariants)
         .innerJoin(products, eq(products.id, productVariants.productId))
         .where(conditions.length ? and(...conditions) : undefined)
         .orderBy(asc(productVariants.sku));
 
-      const totals = rows.reduce(
+      const now = Date.now();
+      const enrichedRows = rows.map((row) => {
+        const totalValuation = Math.round(Number(row.totalStock) * Number(row.avgCost) * 100) / 100;
+        const agingDays = row.lastMovementAt
+          ? Math.floor((now - new Date(row.lastMovementAt).getTime()) / (1000 * 60 * 60 * 24))
+          : null;
+        return { ...row, totalValuation, agingDays };
+      });
+
+      const totals = enrichedRows.reduce(
         (acc, row) => ({
           totalStock: acc.totalStock + Number(row.totalStock),
           totalReceived: acc.totalReceived + Number(row.totalReceived),
           totalSold: acc.totalSold + Number(row.totalSold),
+          totalValuation: acc.totalValuation + row.totalValuation,
         }),
-        { totalStock: 0, totalReceived: 0, totalSold: 0 },
+        { totalStock: 0, totalReceived: 0, totalSold: 0, totalValuation: 0 },
       );
 
-      const columns: ReportColumn<(typeof rows)[number]>[] = [
+      const columns: ReportColumn<(typeof enrichedRows)[number]>[] = [
         { key: 'sku', header: 'SKU' },
         { key: 'productName', header: 'Produk' },
         { key: 'totalStock', header: 'Stok Saat Ini' },
+        { key: 'avgCost', header: 'HPP Rata-Rata' },
+        { key: 'totalValuation', header: 'Total Valuasi' },
+        { key: 'agingDays', header: 'Umur Mengendap (hari)' },
         { key: 'totalReceived', header: 'Total Masuk' },
         { key: 'totalSold', header: 'Total Terjual' },
       ];
-      return respondReport(query.format, 'laporan-stok', 'Laporan Stok', columns, rows, totals, query);
+      return respondReport(
+        query.format,
+        'laporan-stok-valuasi',
+        'Laporan Stok & Valuasi Inventaris',
+        columns,
+        enrichedRows,
+        totals,
+        query,
+      );
     },
     { query: reportQuery, requireRole: ['OWNER', 'GUDANG'] },
+  )
+  .get(
+    '/sales/top-products',
+    async ({ query }) => {
+      const conditions = dateRange(salesOrders.createdAt, query.from, query.to);
+
+      const rows = await db
+        .select({
+          sku: productVariants.sku,
+          productName: products.name,
+          totalQty: sql<number>`coalesce(sum(${salesOrderItems.qty}), 0)`,
+          revenue: sql<number>`coalesce(sum(${salesOrderItems.lineTotal}), 0)`,
+          costOfGoods: sql<number>`coalesce(sum(${salesOrderItems.costOfGoods}), 0)`,
+        })
+        .from(salesOrderItems)
+        .innerJoin(salesOrders, eq(salesOrders.id, salesOrderItems.salesOrderId))
+        .innerJoin(productVariants, eq(productVariants.id, salesOrderItems.variantId))
+        .innerJoin(products, eq(products.id, productVariants.productId))
+        .where(conditions.length ? and(...conditions) : undefined)
+        .groupBy(productVariants.id, productVariants.sku, products.name)
+        .orderBy(sql`coalesce(sum(${salesOrderItems.qty}), 0) desc`);
+
+      const enrichedRows = rows.map((row) => ({
+        ...row,
+        margin: Number(row.revenue) - Number(row.costOfGoods),
+      }));
+
+      const columns: ReportColumn<(typeof enrichedRows)[number]>[] = [
+        { key: 'sku', header: 'SKU' },
+        { key: 'productName', header: 'Produk' },
+        { key: 'totalQty', header: 'Qty Terjual' },
+        { key: 'revenue', header: 'Omset' },
+        { key: 'costOfGoods', header: 'HPP' },
+        { key: 'margin', header: 'Margin' },
+      ];
+      return respondReport(
+        query.format,
+        'laporan-produk-terlaris',
+        'Laporan Produk Terlaris',
+        columns,
+        enrichedRows,
+        {},
+        query,
+      );
+    },
+    { query: reportQuery, requireRole: ['OWNER'] },
+  )
+  .get(
+    '/payment-reconciliation',
+    async ({ query }) => {
+      const conditions = [
+        ...dateRange(salesOrders.createdAt, query.from, query.to),
+        query.channel ? eq(salesOrders.channel, query.channel) : undefined,
+      ].filter(Boolean);
+
+      const rows = await db
+        .select({
+          paymentMethod: salesOrders.paymentMethod,
+          transactionCount: sql<number>`count(*)`,
+          totalAmount: sql<number>`coalesce(sum(${salesOrders.grandTotal}), 0)`,
+        })
+        .from(salesOrders)
+        .where(conditions.length ? and(...conditions) : undefined)
+        .groupBy(salesOrders.paymentMethod)
+        .orderBy(sql`coalesce(sum(${salesOrders.grandTotal}), 0) desc`);
+
+      const totals = rows.reduce(
+        (acc, row) => ({
+          transactionCount: acc.transactionCount + Number(row.transactionCount),
+          totalAmount: acc.totalAmount + Number(row.totalAmount),
+        }),
+        { transactionCount: 0, totalAmount: 0 },
+      );
+
+      const columns: ReportColumn<(typeof rows)[number]>[] = [
+        { key: 'paymentMethod', header: 'Metode Bayar' },
+        { key: 'transactionCount', header: 'Jumlah Transaksi' },
+        { key: 'totalAmount', header: 'Total Nominal' },
+      ];
+      return respondReport(
+        query.format,
+        'laporan-rekonsiliasi-pembayaran',
+        'Laporan Rekonsiliasi Pembayaran',
+        columns,
+        rows,
+        totals,
+        query,
+      );
+    },
+    { query: reportQuery, requireRole: ['OWNER'] },
   )
   .get(
     '/stock-adjustments',

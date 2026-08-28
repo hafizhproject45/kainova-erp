@@ -1,12 +1,12 @@
 <script lang="ts">
-  import { link, push } from 'svelte-spa-router';
+  import { push } from 'svelte-spa-router';
   import { PlusOutline, PenOutline, TrashBinOutline } from 'flowbite-svelte-icons';
   import { api, ApiClientError } from '../../lib/api';
   import AppTable from '../../lib/components/AppTable.svelte';
   import AppButton from '../../lib/components/AppButton.svelte';
   import AppInput from '../../lib/components/AppInput.svelte';
   import AppSelect from '../../lib/components/AppSelect.svelte';
-  import { MASTER_DATA_TABS, columnsFor, tabConfig, type TabKey } from '../../lib/masterDataConfig';
+  import { columnsFor, tabConfig, type TabKey } from '../../lib/masterDataConfig';
 
   let { params } = $props<{ params?: { tab?: string } }>();
 
@@ -15,6 +15,7 @@
   let rows = $state<Record<string, unknown>[]>([]);
   let categories = $state<Array<{ id: string; name: string }>>([]);
   let uoms = $state<Array<{ id: string; name: string }>>([]);
+  let suppliers = $state<Array<{ id: string; name: string }>>([]);
   let loading = $state(false);
   let errorMessage = $state('');
 
@@ -23,9 +24,11 @@
 
   const categoryNameById = $derived(new Map(categories.map((c) => [c.id, c.name])));
   const uomNameById = $derived(new Map(uoms.map((u) => [u.id, u.name])));
+  const supplierNameById = $derived(new Map(suppliers.map((s) => [s.id, s.name])));
 
-  // Baris yang sudah diperkaya untuk ditampilkan di AppTable: status boolean -> label,
-  // produk -> nama kategori/uom hasil lookup (backend hanya kirim id).
+  // Baris yang sudah diperkaya untuk ditampilkan di AppTable: status boolean -> label
+  // (display-only — perubahan status hanya lewat form Add/Edit, bukan dari tabel index),
+  // produk -> nama kategori/uom/supplier hasil lookup (backend hanya kirim id).
   const displayRows = $derived(
     rows.map((row) => {
       const enriched: Record<string, unknown> = { ...row };
@@ -33,6 +36,7 @@
       if (activeTab === 'products') {
         enriched.categoryName = categoryNameById.get(String(row.categoryId)) ?? '-';
         enriched.uomName = row.uomId ? (uomNameById.get(String(row.uomId)) ?? '-') : '-';
+        enriched.supplierName = row.supplierId ? (supplierNameById.get(String(row.supplierId)) ?? '-') : '-';
       }
       return enriched;
     }),
@@ -55,6 +59,7 @@
       if (activeTab === 'products') {
         categories = await api.get<Array<{ id: string; name: string }>>('/categories');
         uoms = await api.get<Array<{ id: string; name: string }>>('/uoms');
+        suppliers = await api.get<Array<{ id: string; name: string }>>('/suppliers');
       }
     } catch (err) {
       errorMessage = err instanceof ApiClientError ? err.message : 'Gagal memuat data';
@@ -80,27 +85,18 @@
       errorMessage = err instanceof ApiClientError ? err.message : 'Gagal menghapus data';
     }
   }
+
 </script>
 
 <div class="mb-4 flex items-center justify-between">
-  <h1 class="text-lg font-semibold text-slate-900">Master Data</h1>
-  <AppButton onclick={() => push(`/master-data/${activeTab}/create`)}>
-    <PlusOutline class="me-1.5 h-4 w-4" /> Tambah {tabConfig(activeTab).label}
+  <h1 class="text-lg font-semibold text-slate-900">Master Data · {tabConfig(activeTab).label}</h1>
+  <AppButton
+    onclick={() =>
+      push(activeTab === 'variants' ? '/master-data/variants/matrix' : `/master-data/${activeTab}/create`)}
+  >
+    <PlusOutline class="me-1.5 h-4 w-4" />
+    {activeTab === 'variants' ? 'Matrix Generator' : `Tambah ${tabConfig(activeTab).label}`}
   </AppButton>
-</div>
-
-<div class="mb-6 flex flex-wrap gap-1 border-b border-slate-200">
-  {#each MASTER_DATA_TABS as tab (tab.key)}
-    <a
-      href="/master-data/{tab.key}"
-      use:link
-      class="border-b-2 px-3 py-2 text-sm font-medium {activeTab === tab.key
-        ? 'border-primary-600 text-primary-700'
-        : 'border-transparent text-slate-500 hover:text-slate-700'}"
-    >
-      {tab.label}
-    </a>
-  {/each}
 </div>
 
 <div class="rounded-xl border border-slate-200 bg-white p-5">

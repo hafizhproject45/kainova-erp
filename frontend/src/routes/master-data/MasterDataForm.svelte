@@ -8,6 +8,9 @@
   import AppInput from '../../lib/components/AppInput.svelte';
   import AppSelect from '../../lib/components/AppSelect.svelte';
   import AppTable from '../../lib/components/AppTable.svelte';
+  import AppToggle from '../../lib/components/AppToggle.svelte';
+  import VariantOptionsRepeater from '../../lib/components/VariantOptionsRepeater.svelte';
+  import type { VariantOptionRow } from '../../lib/components/VariantOptionsRepeater.types';
   import { tabConfig, type TabKey } from '../../lib/masterDataConfig';
 
   let { params } = $props<{ params?: { tab?: string; id?: string } }>();
@@ -22,24 +25,40 @@
   function emptyFormFor(tab: TabKey): Record<string, string> {
     switch (tab) {
       case 'categories':
-        return { name: '' };
+        return { name: '', isActive: 'true' };
       case 'uoms':
-        return { code: '', name: '', description: '' };
+        return { code: '', name: '', description: '', isActive: 'true' };
       case 'suppliers':
       case 'customers':
-        return { name: '', phone: '', email: '', address: '' };
+        return { name: '', phone: '', email: '', address: '', isActive: 'true' };
       case 'taxes':
         return { name: '', type: '', rate: '', isActive: 'true' };
       case 'discounts':
         return { name: '', type: '', value: '', isActive: 'true' };
       case 'products':
-        return { name: '', categoryId: '', uomId: '', material: '', basePrice: '', colors: '', sizes: '' };
+        return {
+          name: '',
+          categoryId: '',
+          uomId: '',
+          supplierId: '',
+          material: '',
+          basePrice: '',
+          isActive: 'true',
+        };
+      case 'variants':
+        return { productId: '', sku: '', material: '', color: '', size: '', price: '', isActive: 'true' };
     }
   }
 
   let form = $state<Record<string, string>>(untrack(() => emptyFormFor((params?.tab as TabKey) ?? 'categories')));
+  // Product Variant Options Repeater (MVP 3 Phase 4) — feed langsung ke Matrix Generator saat create produk.
+  let variantOptionRows = $state<VariantOptionRow[]>([
+    { attribute: 'WARNA', values: '' },
+    { attribute: 'UKURAN', values: '' },
+  ]);
   let categories = $state<Array<{ id: string; name: string }>>([]);
   let uoms = $state<Array<{ id: string; name: string }>>([]);
+  let suppliers = $state<Array<{ id: string; name: string }>>([]);
   let loading = $state(false);
   let saving = $state(false);
   let errorMessage = $state('');
@@ -102,9 +121,14 @@
   async function loadForm() {
     errorMessage = '';
     form = emptyFormFor(activeTab);
+    variantOptionRows = [
+      { attribute: 'WARNA', values: '' },
+      { attribute: 'UKURAN', values: '' },
+    ];
     if (activeTab === 'products') {
       categories = await api.get<Array<{ id: string; name: string }>>('/categories');
       uoms = await api.get<Array<{ id: string; name: string }>>('/uoms');
+      suppliers = await api.get<Array<{ id: string; name: string }>>('/suppliers');
     }
     if (!editingId) return;
 
@@ -115,23 +139,45 @@
       if (!row) throw new Error('Data tidak ditemukan');
 
       if (activeTab === 'categories') {
-        form = { name: String(row.name ?? '') };
+        form = { name: String(row.name ?? ''), isActive: String(row.isActive ?? 'true') };
       } else if (activeTab === 'uoms') {
-        form = { code: String(row.code ?? ''), name: String(row.name ?? ''), description: String(row.description ?? '') };
+        form = {
+          code: String(row.code ?? ''),
+          name: String(row.name ?? ''),
+          description: String(row.description ?? ''),
+          isActive: String(row.isActive ?? 'true'),
+        };
       } else if (activeTab === 'suppliers' || activeTab === 'customers') {
         form = {
           name: String(row.name ?? ''),
           phone: String(row.phone ?? ''),
           email: String(row.email ?? ''),
           address: String(row.address ?? ''),
+          isActive: String(row.isActive ?? 'true'),
         };
       } else if (activeTab === 'taxes') {
         form = { name: String(row.name ?? ''), rate: String(row.rate ?? ''), isActive: String(row.isActive ?? 'true') };
       } else if (activeTab === 'discounts') {
         form = { name: String(row.name ?? ''), value: String(row.value ?? ''), isActive: String(row.isActive ?? 'true') };
       } else if (activeTab === 'products') {
-        form = { name: String(row.name ?? ''), categoryId: String(row.categoryId ?? ''), uomId: String(row.uomId ?? '') };
+        form = {
+          name: String(row.name ?? ''),
+          categoryId: String(row.categoryId ?? ''),
+          uomId: String(row.uomId ?? ''),
+          supplierId: String(row.supplierId ?? ''),
+          isActive: String(row.isActive ?? 'true'),
+        };
         await loadVariants();
+      } else if (activeTab === 'variants') {
+        form = {
+          productId: String(row.productId ?? ''),
+          sku: String(row.sku ?? ''),
+          material: String(row.material ?? ''),
+          color: String(row.color ?? ''),
+          size: String(row.size ?? ''),
+          price: String(row.price ?? ''),
+          isActive: String(row.isActive ?? 'true'),
+        };
       }
     } catch (err) {
       errorMessage = err instanceof ApiClientError ? err.message : 'Gagal memuat data';
@@ -153,15 +199,29 @@
     try {
       if (isEdit && editingId) {
         if (activeTab === 'categories') {
-          await api.put(`/categories/${editingId}`, { name: form.name });
+          await api.put(`/categories/${editingId}`, { name: form.name, isActive: form.isActive === 'true' });
         } else if (activeTab === 'uoms') {
-          await api.put(`/uoms/${editingId}`, { code: form.code, name: form.name, description: form.description || undefined });
+          await api.put(`/uoms/${editingId}`, {
+            code: form.code,
+            name: form.name,
+            description: form.description || undefined,
+            isActive: form.isActive === 'true',
+          });
         } else if (activeTab === 'suppliers' || activeTab === 'customers') {
           await api.put(`/${activeTab}/${editingId}`, {
             name: form.name,
             phone: form.phone || undefined,
             email: form.email || undefined,
             address: form.address || undefined,
+            isActive: form.isActive === 'true',
+          });
+        } else if (activeTab === 'variants') {
+          await api.put(`/product-variants/${editingId}`, {
+            price: form.price ? Number(form.price) : undefined,
+            material: form.material || undefined,
+            color: form.color || undefined,
+            size: form.size || undefined,
+            isActive: form.isActive === 'true',
           });
         } else if (activeTab === 'taxes') {
           await api.put(`/taxes/${editingId}`, {
@@ -176,7 +236,13 @@
             isActive: form.isActive === 'true',
           });
         } else if (activeTab === 'products') {
-          await api.put(`/products/${editingId}`, { name: form.name, categoryId: form.categoryId, uomId: form.uomId });
+          await api.put(`/products/${editingId}`, {
+            name: form.name,
+            categoryId: form.categoryId,
+            uomId: form.uomId,
+            supplierId: form.supplierId || '',
+            isActive: form.isActive === 'true',
+          });
         }
       } else {
         if (activeTab === 'categories') {
@@ -195,13 +261,22 @@
         } else if (activeTab === 'discounts') {
           await api.post('/discounts', { name: form.name, type: form.type, value: Number(form.value) });
         } else if (activeTab === 'products') {
+          const colors = (variantOptionRows.find((r) => r.attribute === 'WARNA')?.values ?? '')
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean);
+          const sizes = (variantOptionRows.find((r) => r.attribute === 'UKURAN')?.values ?? '')
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean);
           await api.post('/products/matrix', {
             name: form.name,
             categoryId: form.categoryId,
             uomId: form.uomId,
+            supplierId: form.supplierId || undefined,
             material: form.material || undefined,
-            colors: (form.colors ?? '').split(',').map((s) => s.trim()).filter(Boolean),
-            sizes: (form.sizes ?? '').split(',').map((s) => s.trim()).filter(Boolean),
+            colors,
+            sizes,
             basePrice: Number(form.basePrice),
           });
         }
@@ -236,13 +311,22 @@
         <AppInput label="Kode" name="code" required bind:value={form.code} placeholder="mis. PCS" />
         <AppInput label="Nama Satuan" name="name" required bind:value={form.name} placeholder="mis. Pieces" />
         <AppInput label="Deskripsi" name="description" bind:value={form.description} class="sm:col-span-2" />
+        {#if isEdit}
+          <AppToggle label="Status" checked={form.isActive === 'true'} onchange={(v) => (form.isActive = String(v))} />
+        {/if}
       {:else if activeTab === 'categories'}
         <AppInput label="Nama Kategori" name="name" required bind:value={form.name} class="sm:col-span-2" />
+        {#if isEdit}
+          <AppToggle label="Status" checked={form.isActive === 'true'} onchange={(v) => (form.isActive = String(v))} />
+        {/if}
       {:else if activeTab === 'suppliers' || activeTab === 'customers'}
         <AppInput label="Nama" name="name" required bind:value={form.name} class="sm:col-span-2" />
         <AppInput label="Telepon" name="phone" bind:value={form.phone} />
         <AppInput label="Email" name="email" type="email" bind:value={form.email} />
         <AppInput label="Alamat" name="address" bind:value={form.address} class="sm:col-span-2" />
+        {#if isEdit}
+          <AppToggle label="Status" checked={form.isActive === 'true'} onchange={(v) => (form.isActive = String(v))} />
+        {/if}
       {:else if activeTab === 'taxes'}
         <AppInput label="Nama Pajak" name="name" required bind:value={form.name} />
         {#if !isEdit}
@@ -256,12 +340,7 @@
         {/if}
         <AppInput label="Rate (%)" name="rate" required numeric bind:value={form.rate} />
         {#if isEdit}
-          <AppSelect
-            label="Status"
-            name="isActive"
-            items={[{ value: 'true', name: 'Aktif' }, { value: 'false', name: 'Nonaktif' }]}
-            bind:value={form.isActive}
-          />
+          <AppToggle label="Status" checked={form.isActive === 'true'} onchange={(v) => (form.isActive = String(v))} />
         {/if}
       {:else if activeTab === 'discounts'}
         <AppInput label="Nama Diskon" name="name" required bind:value={form.name} />
@@ -276,12 +355,7 @@
         {/if}
         <AppInput label="Nilai" name="value" required numeric bind:value={form.value} />
         {#if isEdit}
-          <AppSelect
-            label="Status"
-            name="isActive"
-            items={[{ value: 'true', name: 'Aktif' }, { value: 'false', name: 'Nonaktif' }]}
-            bind:value={form.isActive}
-          />
+          <AppToggle label="Status" checked={form.isActive === 'true'} onchange={(v) => (form.isActive = String(v))} />
         {/if}
       {:else if activeTab === 'products'}
         <AppInput label="Nama Produk" name="name" required bind:value={form.name} class="sm:col-span-2" />
@@ -299,12 +373,27 @@
           items={uoms.map((u) => ({ value: u.id, name: u.name }))}
           bind:value={form.uomId}
         />
+        <AppSelect
+          label="Default Supplier"
+          name="supplierId"
+          placeholder="Tanpa supplier default"
+          items={suppliers.map((s) => ({ value: s.id, name: s.name }))}
+          bind:value={form.supplierId}
+        />
         {#if !isEdit}
           <AppInput label="Material" name="material" bind:value={form.material} />
           <AppInput label="Harga Dasar" name="basePrice" required numeric bind:value={form.basePrice} />
-          <AppInput label="Warna (pisah koma)" name="colors" required bind:value={form.colors} placeholder="Hitam, Putih" />
-          <AppInput label="Ukuran (pisah koma)" name="sizes" required bind:value={form.sizes} placeholder="S, M, L" />
+          <VariantOptionsRepeater bind:rows={variantOptionRows} />
+        {:else}
+          <AppToggle label="Status" checked={form.isActive === 'true'} onchange={(v) => (form.isActive = String(v))} />
         {/if}
+      {:else if activeTab === 'variants'}
+        <AppInput label="SKU" name="sku" bind:value={form.sku} disabled />
+        <AppInput label="Material" name="material" bind:value={form.material} />
+        <AppInput label="Warna" name="color" required bind:value={form.color} />
+        <AppInput label="Ukuran" name="size" required bind:value={form.size} />
+        <AppInput label="Harga" name="price" required numeric bind:value={form.price} />
+        <AppToggle label="Status" checked={form.isActive === 'true'} onchange={(v) => (form.isActive = String(v))} />
       {/if}
 
       {#if errorMessage}<p class="text-sm text-red-600 sm:col-span-2">{errorMessage}</p>{/if}

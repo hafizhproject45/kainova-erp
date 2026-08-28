@@ -29,6 +29,34 @@
       "when": 1787886930200,
       "tag": "0003_broad_scarlet_spider",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1787902041745,
+      "tag": "0004_pink_starhawk",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1787902924813,
+      "tag": "0005_large_young_avengers",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1787905764368,
+      "tag": "0006_flat_black_tarantula",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1787908963344,
+      "tag": "0007_hot_riptide",
+      "breakpoints": true
     }
   ]
 }

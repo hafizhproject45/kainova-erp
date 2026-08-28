@@ -1,9 +1,16 @@
 import { Elysia, t } from 'elysia';
-import { eq, isNull } from 'drizzle-orm';
+import { and, eq, isNull } from 'drizzle-orm';
 import { db } from '../../config/database';
 import { categories, customers, discounts, suppliers, taxes, uoms } from '../../db/schema';
 import { authPlugin } from '../auth';
 import { ok, toCamelCase } from '../../utils/http';
+
+// MVP 3 Phase 1: standardisasi Toggle `is_active` — semua GET list mendukung
+// query `?is_active=true|false` untuk Strict Filtering di form transaksi (POS,
+// Pembelian, Adjustment Stok), dan setiap entity punya PATCH /:id/status untuk
+// Inline Quick Toggle di AppTable Master Data.
+const activeQuery = t.Object({ is_active: t.Optional(t.String()) });
+const statusBody = t.Object({ is_active: t.Boolean() });
 
 // ---------------------------------------------------------------------------
 // Kategori Produk
@@ -11,9 +18,15 @@ import { ok, toCamelCase } from '../../utils/http';
 
 const categoriesRoutes = new Elysia({ prefix: '/categories' })
   .use(authPlugin)
-  .get('', async () => ok(await db.select().from(categories).where(isNull(categories.deletedAt))), {
-    requireRole: ['OWNER', 'GUDANG', 'KASIR'],
-  })
+  .get(
+    '',
+    async ({ query }) => {
+      const conditions = [isNull(categories.deletedAt)];
+      if (query.is_active !== undefined) conditions.push(eq(categories.isActive, query.is_active === 'true'));
+      return ok(await db.select().from(categories).where(and(...conditions)));
+    },
+    { query: activeQuery, requireRole: ['OWNER', 'GUDANG', 'KASIR'] },
+  )
   .post(
     '',
     async ({ body }) => {
@@ -32,7 +45,19 @@ const categoriesRoutes = new Elysia({ prefix: '/categories' })
         .returning();
       return ok(row, 'Kategori berhasil diperbarui');
     },
-    { body: t.Object({ name: t.String() }), requireRole: ['OWNER'] },
+    { body: t.Object({ name: t.Optional(t.String()), is_active: t.Optional(t.Boolean()) }), requireRole: ['OWNER'] },
+  )
+  .patch(
+    '/:id/status',
+    async ({ params, body }) => {
+      const [row] = await db
+        .update(categories)
+        .set({ isActive: body.is_active, updatedAt: new Date() })
+        .where(eq(categories.id, params.id))
+        .returning();
+      return ok(row, 'Status kategori berhasil diperbarui');
+    },
+    { body: statusBody, requireRole: ['OWNER'] },
   )
   .delete(
     '/:id',
@@ -54,11 +79,25 @@ const partyBody = t.Object({
   address: t.Optional(t.String()),
 });
 
+const partyUpdateBody = t.Object({
+  name: t.Optional(t.String()),
+  phone: t.Optional(t.String()),
+  email: t.Optional(t.String()),
+  address: t.Optional(t.String()),
+  is_active: t.Optional(t.Boolean()),
+});
+
 const suppliersRoutes = new Elysia({ prefix: '/suppliers' })
   .use(authPlugin)
-  .get('', async () => ok(await db.select().from(suppliers).where(isNull(suppliers.deletedAt))), {
-    requireRole: ['OWNER', 'GUDANG', 'KASIR'],
-  })
+  .get(
+    '',
+    async ({ query }) => {
+      const conditions = [isNull(suppliers.deletedAt)];
+      if (query.is_active !== undefined) conditions.push(eq(suppliers.isActive, query.is_active === 'true'));
+      return ok(await db.select().from(suppliers).where(and(...conditions)));
+    },
+    { query: activeQuery, requireRole: ['OWNER', 'GUDANG', 'KASIR'] },
+  )
   .post(
     '',
     async ({ body }) => {
@@ -77,7 +116,19 @@ const suppliersRoutes = new Elysia({ prefix: '/suppliers' })
         .returning();
       return ok(row, 'Supplier berhasil diperbarui');
     },
-    { body: partyBody, requireRole: ['OWNER'] },
+    { body: partyUpdateBody, requireRole: ['OWNER'] },
+  )
+  .patch(
+    '/:id/status',
+    async ({ params, body }) => {
+      const [row] = await db
+        .update(suppliers)
+        .set({ isActive: body.is_active, updatedAt: new Date() })
+        .where(eq(suppliers.id, params.id))
+        .returning();
+      return ok(row, 'Status supplier berhasil diperbarui');
+    },
+    { body: statusBody, requireRole: ['OWNER'] },
   )
   .delete(
     '/:id',
@@ -94,9 +145,15 @@ const suppliersRoutes = new Elysia({ prefix: '/suppliers' })
 
 const customersRoutes = new Elysia({ prefix: '/customers' })
   .use(authPlugin)
-  .get('', async () => ok(await db.select().from(customers).where(isNull(customers.deletedAt))), {
-    requireRole: ['OWNER', 'GUDANG', 'KASIR'],
-  })
+  .get(
+    '',
+    async ({ query }) => {
+      const conditions = [isNull(customers.deletedAt)];
+      if (query.is_active !== undefined) conditions.push(eq(customers.isActive, query.is_active === 'true'));
+      return ok(await db.select().from(customers).where(and(...conditions)));
+    },
+    { query: activeQuery, requireRole: ['OWNER', 'GUDANG', 'KASIR'] },
+  )
   .post(
     '',
     async ({ body }) => {
@@ -115,7 +172,19 @@ const customersRoutes = new Elysia({ prefix: '/customers' })
         .returning();
       return ok(row, 'Customer berhasil diperbarui');
     },
-    { body: partyBody, requireRole: ['OWNER'] },
+    { body: partyUpdateBody, requireRole: ['OWNER'] },
+  )
+  .patch(
+    '/:id/status',
+    async ({ params, body }) => {
+      const [row] = await db
+        .update(customers)
+        .set({ isActive: body.is_active, updatedAt: new Date() })
+        .where(eq(customers.id, params.id))
+        .returning();
+      return ok(row, 'Status customer berhasil diperbarui');
+    },
+    { body: statusBody, requireRole: ['OWNER'] },
   )
   .delete(
     '/:id',
@@ -178,6 +247,18 @@ const taxesRoutes = new Elysia({ prefix: '/taxes' })
       }),
       requireRole: ['OWNER'],
     },
+  )
+  .patch(
+    '/:id/status',
+    async ({ params, body }) => {
+      const [row] = await db
+        .update(taxes)
+        .set({ isActive: body.is_active, updatedAt: new Date() })
+        .where(eq(taxes.id, params.id))
+        .returning();
+      return ok(row, 'Status pajak berhasil diperbarui');
+    },
+    { body: statusBody, requireRole: ['OWNER'] },
   )
   .delete(
     '/:id',
@@ -256,6 +337,18 @@ const discountsRoutes = new Elysia({ prefix: '/discounts' })
       requireRole: ['OWNER'],
     },
   )
+  .patch(
+    '/:id/status',
+    async ({ params, body }) => {
+      const [row] = await db
+        .update(discounts)
+        .set({ isActive: body.is_active, updatedAt: new Date() })
+        .where(eq(discounts.id, params.id))
+        .returning();
+      return ok(row, 'Status diskon berhasil diperbarui');
+    },
+    { body: statusBody, requireRole: ['OWNER'] },
+  )
   .delete(
     '/:id',
     async ({ params }) => {
@@ -271,9 +364,15 @@ const discountsRoutes = new Elysia({ prefix: '/discounts' })
 
 const uomsRoutes = new Elysia({ prefix: '/uoms' })
   .use(authPlugin)
-  .get('', async () => ok(await db.select().from(uoms).where(isNull(uoms.deletedAt))), {
-    requireRole: ['OWNER', 'GUDANG', 'KASIR'],
-  })
+  .get(
+    '',
+    async ({ query }) => {
+      const conditions = [isNull(uoms.deletedAt)];
+      if (query.is_active !== undefined) conditions.push(eq(uoms.isActive, query.is_active === 'true'));
+      return ok(await db.select().from(uoms).where(and(...conditions)));
+    },
+    { query: activeQuery, requireRole: ['OWNER', 'GUDANG', 'KASIR'] },
+  )
   .post(
     '',
     async ({ body }) => {
@@ -293,9 +392,26 @@ const uomsRoutes = new Elysia({ prefix: '/uoms' })
       return ok(row, 'UOM berhasil diperbarui');
     },
     {
-      body: t.Object({ code: t.Optional(t.String()), name: t.Optional(t.String()), description: t.Optional(t.String()) }),
+      body: t.Object({
+        code: t.Optional(t.String()),
+        name: t.Optional(t.String()),
+        description: t.Optional(t.String()),
+        is_active: t.Optional(t.Boolean()),
+      }),
       requireRole: ['OWNER'],
     },
+  )
+  .patch(
+    '/:id/status',
+    async ({ params, body }) => {
+      const [row] = await db
+        .update(uoms)
+        .set({ isActive: body.is_active, updatedAt: new Date() })
+        .where(eq(uoms.id, params.id))
+        .returning();
+      return ok(row, 'Status UOM berhasil diperbarui');
+    },
+    { body: statusBody, requireRole: ['OWNER'] },
   )
   .delete(
     '/:id',

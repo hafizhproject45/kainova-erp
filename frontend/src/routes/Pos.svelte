@@ -108,7 +108,7 @@
     if (!selectedProductId) return;
     variantsLoading = true;
     try {
-      variants = await api.get<Variant[]>(`/products/${product.id}/variants`);
+      variants = await api.get<Variant[]>(`/products/${product.id}/variants`, { isActive: true });
     } finally {
       variantsLoading = false;
     }
@@ -207,10 +207,11 @@
 
   onMount(async () => {
     try {
+      // MVP 3 Phase 1: Strict Filtering — POS hanya boleh menjual produk/UOM/customer yang aktif.
       [products, uoms, customers, options] = await Promise.all([
-        api.get<Product[]>('/products'),
-        api.get<Uom[]>('/uoms'),
-        api.get<Customer[]>('/customers'),
+        api.get<Product[]>('/products', { isActive: true }),
+        api.get<Uom[]>('/uoms', { isActive: true }),
+        api.get<Customer[]>('/customers', { isActive: true }),
         api.get<CheckoutOptions>('/sales/checkout-options'),
       ]);
       ppnTaxId = options.defaultPpnTaxId ?? '';

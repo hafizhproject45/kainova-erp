@@ -1,8 +1,9 @@
 <script lang="ts">
   import { link, router } from 'svelte-spa-router';
   import {
-    AdjustmentsHorizontalOutline,
+    ArchiveOutline,
     ChartPieOutline,
+    ChevronDownOutline,
     CogOutline,
     GridOutline,
     ShoppingBagOutline,
@@ -10,20 +11,66 @@
     TruckOutline,
   } from 'flowbite-svelte-icons';
   import { authState, logout } from './stores/auth';
+  import { MASTER_DATA_TABS } from './masterDataConfig';
 
   let { children } = $props();
 
+  // MVP 3 Phase 1 & 3: Master Data & Inventory pindah dari model tab tunggal/link datar
+  // menjadi Accordion Sub-Menu Dedicated di Sidebar — tiap entity/sub-module langsung
+  // punya route sendiri. `basePath` dipakai untuk auto-expand & highlight grup yang aktif.
   const navItems = [
-    { href: '/', label: 'Dashboard', roles: ['OWNER'], icon: GridOutline },
-    { href: '/master-data', label: 'Master Data', roles: ['OWNER'], icon: TableColumnOutline },
-    { href: '/pos', label: 'Penjualan (POS)', roles: ['OWNER', 'KASIR'], icon: ShoppingBagOutline },
-    { href: '/purchasing', label: 'Pembelian', roles: ['OWNER', 'GUDANG'], icon: TruckOutline },
-    { href: '/stock-adjustment', label: 'Adjustment Stok', roles: ['OWNER', 'GUDANG'], icon: AdjustmentsHorizontalOutline },
-    { href: '/reports', label: 'Laporan', roles: ['OWNER'], icon: ChartPieOutline },
-    { href: '/settings', label: 'Settings', roles: ['OWNER'], icon: CogOutline },
+    { type: 'link' as const, href: '/', label: 'Dashboard', roles: ['OWNER'], icon: GridOutline },
+    {
+      type: 'group' as const,
+      label: 'Master Data',
+      basePath: '/master-data',
+      roles: ['OWNER'],
+      icon: TableColumnOutline,
+      children: MASTER_DATA_TABS.map((t) => ({ href: `/master-data/${t.key}`, label: t.label })),
+    },
+    { type: 'link' as const, href: '/pos', label: 'Penjualan (POS)', roles: ['OWNER', 'KASIR'], icon: ShoppingBagOutline },
+    { type: 'link' as const, href: '/purchasing', label: 'Pembelian', roles: ['OWNER', 'GUDANG'], icon: TruckOutline },
+    {
+      type: 'group' as const,
+      label: 'Inventory',
+      basePath: '/inventory',
+      roles: ['OWNER', 'GUDANG'],
+      icon: ArchiveOutline,
+      children: [
+        { href: '/inventory/stock-products', label: 'Stok Produk' },
+        { href: '/inventory/stock-adjustments', label: 'Adjustment Stok' },
+      ],
+    },
+    {
+      type: 'group' as const,
+      label: 'Laporan',
+      basePath: '/reports',
+      roles: ['OWNER'],
+      icon: ChartPieOutline,
+      children: [
+        { href: '/reports/sales', label: 'Penjualan & Produk Terlaris' },
+        { href: '/reports/purchases', label: 'Pembelian per Supplier' },
+        { href: '/reports/inventory-valuation', label: 'Stok & Valuasi Inventaris' },
+        { href: '/reports/stock-adjustments', label: 'Adjustment Stok' },
+        { href: '/reports/profit-and-loss', label: 'Laba Rugi' },
+        { href: '/reports/payment-reconciliation', label: 'Rekonsiliasi Pembayaran' },
+      ],
+    },
+    { type: 'link' as const, href: '/settings', label: 'Settings', roles: ['OWNER'], icon: CogOutline },
   ];
 
   const visibleNavItems = $derived(navItems.filter((item) => item.roles.includes($authState.user?.role ?? '')));
+
+  let openGroups = $state<Record<string, boolean>>({});
+  function isGroupRouteActive(basePath: string) {
+    return router.location?.startsWith(basePath) ?? false;
+  }
+  // Auto-expand accordion grup begitu URL aktif berada di dalamnya.
+  $effect(() => {
+    for (const item of navItems) {
+      if (item.type === 'group' && isGroupRouteActive(item.basePath)) openGroups[item.label] = true;
+    }
+  });
 
   // Sidebar jadi off-canvas drawer di layar < md (tablet/mobile toko) supaya tidak
   // mendorong konten utama keluar viewport & memicu scroll horizontal.
@@ -49,18 +96,48 @@
       <p class="text-xs text-slate-500">Popyshop</p>
     </div>
     <nav class="flex flex-col gap-0.5 p-3">
-      {#each visibleNavItems as item (item.href)}
-        <a
-          href={item.href}
-          use:link
-          onclick={() => (mobileMenuOpen = false)}
-          class="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition {router.location === item.href
-            ? 'bg-primary-50 text-primary-700'
-            : 'text-slate-600 hover:bg-slate-100'}"
-        >
-          <item.icon class="h-4 w-4 shrink-0" />
-          {item.label}
-        </a>
+      {#each visibleNavItems as item (item.label)}
+        {#if item.type === 'link'}
+          <a
+            href={item.href}
+            use:link
+            onclick={() => (mobileMenuOpen = false)}
+            class="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition {router.location === item.href
+              ? 'bg-primary-50 text-primary-700'
+              : 'text-slate-600 hover:bg-slate-100'}"
+          >
+            <item.icon class="h-4 w-4 shrink-0" />
+            {item.label}
+          </a>
+        {:else}
+          <button
+            type="button"
+            onclick={() => (openGroups[item.label] = !openGroups[item.label])}
+            class="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition {isGroupRouteActive(item.basePath)
+              ? 'bg-primary-50 text-primary-700'
+              : 'text-slate-600 hover:bg-slate-100'}"
+          >
+            <item.icon class="h-4 w-4 shrink-0" />
+            <span class="flex-1 text-left">{item.label}</span>
+            <ChevronDownOutline class="h-3.5 w-3.5 shrink-0 transition-transform {openGroups[item.label] ? 'rotate-180' : ''}" />
+          </button>
+          {#if openGroups[item.label]}
+            <div class="ml-3.5 flex flex-col gap-0.5 border-l border-slate-200 pl-3.5">
+              {#each item.children as child (child.href)}
+                <a
+                  href={child.href}
+                  use:link
+                  onclick={() => (mobileMenuOpen = false)}
+                  class="rounded-lg px-3 py-1.5 text-sm transition {router.location === child.href
+                    ? 'bg-primary-50 font-medium text-primary-700'
+                    : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'}"
+                >
+                  {child.label}
+                </a>
+              {/each}
+            </div>
+          {/if}
+        {/if}
       {/each}
     </nav>
   </aside>

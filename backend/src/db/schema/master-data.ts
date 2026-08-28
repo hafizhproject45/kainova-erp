@@ -7,6 +7,7 @@ import { boolean, integer, numeric, pgEnum, pgTable, text, timestamp, uuid, varc
 export const categories = pgTable('categories', {
   id: uuid('id').defaultRandom().primaryKey(),
   name: varchar('name', { length: 100 }).notNull().unique(),
+  isActive: boolean('is_active').default(true).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   deletedAt: timestamp('deleted_at'),
@@ -21,6 +22,7 @@ export const uoms = pgTable('uoms', {
   code: varchar('code', { length: 20 }).notNull().unique(),
   name: varchar('name', { length: 100 }).notNull(),
   description: text('description'),
+  isActive: boolean('is_active').default(true).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   deletedAt: timestamp('deleted_at'),
@@ -37,6 +39,10 @@ export const products = pgTable('products', {
   // UOM di-set pada produk parent & berlaku untuk seluruh varian SKU di bawahnya
   // (lihat DEVELOPMENT_ROADMAP_MVP_2.md Phase 2 — dropdown UOM wajib di form Produk).
   uomId: uuid('uom_id').references(() => uoms.id),
+  // Default Supplier (MVP 3 Phase 1) — mempermudah alur pengadaan di modul Pembelian,
+  // opsional karena produk lama belum tentu punya supplier tunggal.
+  supplierId: uuid('supplier_id').references(() => suppliers.id),
+  isActive: boolean('is_active').default(true).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   deletedAt: timestamp('deleted_at'),
@@ -56,6 +62,7 @@ export const productVariants = pgTable('product_variants', {
   // Default 7 hari lead time & 0 safety stock; idealnya diisi per-produk lewat Master Data.
   leadTimeDays: integer('lead_time_days').default(7).notNull(),
   safetyStock: integer('safety_stock').default(0).notNull(),
+  isActive: boolean('is_active').default(true).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   deletedAt: timestamp('deleted_at'),
@@ -71,6 +78,7 @@ export const suppliers = pgTable('suppliers', {
   phone: varchar('phone', { length: 30 }),
   email: varchar('email', { length: 255 }),
   address: text('address'),
+  isActive: boolean('is_active').default(true).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   deletedAt: timestamp('deleted_at'),
@@ -82,6 +90,7 @@ export const customers = pgTable('customers', {
   phone: varchar('phone', { length: 30 }),
   email: varchar('email', { length: 255 }),
   address: text('address'),
+  isActive: boolean('is_active').default(true).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   deletedAt: timestamp('deleted_at'),

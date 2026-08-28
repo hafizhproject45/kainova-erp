@@ -45,7 +45,8 @@
 
   onMount(async () => {
     try {
-      products = await api.get<Product[]>('/products');
+      // MVP 3 Phase 1: Strict Filtering — hanya produk aktif yang bisa disesuaikan stoknya.
+      products = await api.get<Product[]>('/products', { isActive: true });
     } catch (err) {
       errorMessage = err instanceof ApiClientError ? err.message : 'Gagal memuat data';
     }
@@ -55,7 +56,7 @@
     productId;
     variantId = '';
     variants = [];
-    if (productId) api.get<Variant[]>(`/products/${productId}/variants`).then((v) => (variants = v));
+    if (productId) api.get<Variant[]>(`/products/${productId}/variants`, { isActive: true }).then((v) => (variants = v));
   });
 
   function addItem() {
@@ -83,12 +84,12 @@
     errorMessage = '';
     saving = true;
     try {
-      await api.post('/stock-adjustments', {
+      await api.post('/inventory/stock-adjustments', {
         type,
         reason,
         items: items.map((i) => ({ variantId: i.variantId, systemQty: i.systemQty, actualQty: i.actualQty })),
       });
-      push('/stock-adjustment');
+      push('/inventory/stock-adjustments');
     } catch (err) {
       errorMessage = err instanceof ApiClientError ? err.message : 'Gagal membuat adjustment';
     } finally {
@@ -99,7 +100,7 @@
 
 <div class="mb-4 flex items-center gap-3">
   <button
-    onclick={() => push('/stock-adjustment')}
+    onclick={() => push('/inventory/stock-adjustments')}
     class="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-100"
   >
     <ArrowLeftOutline class="h-4 w-4" /> Kembali
