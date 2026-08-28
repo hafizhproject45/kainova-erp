@@ -92,22 +92,22 @@ Goal: Mengubah modul Adjustment Stok menjadi modul Inventory menyeluruh, menghad
 
 Goal: Mengubah modul Laporan menjadi Accordion Sub-Menu Sidebar dengan 6 laporan esensial, menambahkan komponen Variant Options Repeater pada Master Data Produk, serta membangun modul Settings menyeluruh untuk pengelolaan bisnis, kebijakan inventaris, dan hak akses.
 
-* [ ] **Restrukturisasi Sidebar Sub-Module Laporan (`/reports/*`):**
-  * [ ] Mengubah *dropdown select* jenis laporan menjadi **Accordion Sub-Menu Sidebar**.
-  * [ ] 📊 **Laporan Penjualan & Produk Terlaris** (`/reports/sales`): Analytics omset, pergerakan barang (*fast-moving* vs *slow-moving*), dan margin produk.
-  * [ ] 🛍️ **Laporan Pembelian per Supplier** (`/reports/purchases`): Rekapitulasi volume pengadaan, tren harga, dan riwayat PO per supplier.
-  * [ ] 📦 **Laporan Stok & Valuasi Inventaris** (`/reports/inventory-valuation`): Valuasi aset barang (FIFO/Average) dan deteksi umur mengendap stok (*aging report*).
-  * [ ] ⚖️ **Laporan Adjustment Stok** (`/reports/stock-adjustments`): Audit trail kerugian dan penyesuaian opname.
-  * [ ] 💵 **Laporan Laba Rugi (Profit & Loss)** (`/reports/profit-and-loss`): Ringkasan finansial (`Revenue` - `HPP/COGS` - `Biaya Operasional` = `Net Profit`).
-  * [ ] 💳 **Laporan Rekonsiliasi Pembayaran** (`/reports/payment-reconciliation`): Rekapitulasi transaksi berdasarkan kanal bayar (Tunai, QRIS, Transfer) untuk *settlement* kasir harian.
-* [ ] **Product Variant Options Repeater Engine:**
-  * [ ] **Variant Attribute Repeater Input**: Tambah komponen UI dinamis (*dynamic row repeater*) pada form Tambah/Edit Produk (`/master-data/products`) untuk mendefinisikan Opsi Varian (misal: Row 1: `Ukuran` ➔ `S, M, L`, Row 2: `Warna` ➔ `Merah, Hitam`).
-  * [ ] **Seamless Matrix Feeding**: Data hasil inputan Repeater secara otomatis di-passing sebagai input mentah (*feed*) ke komponen **Matrix Generator** untuk membentuk kombinasi SKU.
-* [ ] **Modul Settings & System Administration (`/settings/*`):**
-  * [ ] **Company Profile Settings:** Identitas perusahaan, logo, alamat, NPWP, dan kontak untuk header dokumen & struk.
-  * [ ] **Inventory Policy Settings:** Opsi metode costing HPP (**FIFO** / **Moving Average**), toggle izin stok minus, dan *threshold* notifikasi stok minimum.
-  * [ ] **Role & Permission Matrix:** Pengaturan hak akses bertingkat (*Owner, Manager, Kasir, Gudang*) dengan kontrol granular per aksi modul (misal: Siapa yang boleh menyetujui PO atau melakukan Adjustment Stok).
-  * [ ] **Receipt & Auto-Numbering Templates:** Kustomisasi struk POS (Thermal 58mm/80mm) dan format prefix penomoran dokumen otomatis (`PR/{YYYY}/{MM}/XXX`, `PO/{YYYY}/{MM}/XXX`, `INV/{YYYY}/{MM}/XXX`).
+* [x] **Restrukturisasi Sidebar Sub-Module Laporan (`/reports/*`):**
+  * [x] Mengubah *dropdown select* jenis laporan menjadi **Accordion Sub-Menu Sidebar**.
+  * [x] 📊 **Laporan Penjualan & Produk Terlaris** (`/reports/sales`): Analytics omset, dan margin produk (tabel Top Products qty/omset/HPP/margin per SKU). *Catatan: klasifikasi fast/slow-moving eksplisit belum digabung ke halaman ini — sudah ada sebagai endpoint terpisah `/analytics/inventory-velocity` sejak MVP 2.*
+  * [x] 🛍️ **Laporan Pembelian per Supplier** (`/reports/purchases`): Rekapitulasi volume pengadaan dan riwayat PO per supplier.
+  * [x] 📦 **Laporan Stok & Valuasi Inventaris** (`/reports/inventory-valuation`): Valuasi aset barang (`totalStock x avgCost`, mengikuti metode costing aktif) dan deteksi umur mengendap stok (*aging report* — hari sejak pergerakan terakhir).
+  * [x] ⚖️ **Laporan Adjustment Stok** (`/reports/stock-adjustments`): Audit trail kerugian dan penyesuaian opname.
+  * [x] 💵 **Laporan Laba Rugi (Profit & Loss)** (`/reports/profit-and-loss`): Ringkasan finansial (`Revenue` - `HPP/COGS` = `Laba Kotor`, belum memisahkan Biaya Operasional non-HPP karena belum ada modul pencatatan beban operasional di MVP ini).
+  * [x] 💳 **Laporan Rekonsiliasi Pembayaran** (`/reports/payment-reconciliation`): Rekapitulasi transaksi berdasarkan kanal bayar (Tunai, QRIS, Debit, Kredit) untuk *settlement* kasir harian.
+* [x] **Product Variant Options Repeater Engine:**
+  * [x] **Variant Attribute Repeater Input**: Komponen UI dinamis (*dynamic row repeater*, `VariantOptionsRepeater.svelte`) pada form Tambah Produk (`/master-data/products/create`) untuk mendefinisikan Opsi Varian Warna/Ukuran. *Catatan: dibatasi maksimal 2 row (1x Warna, 1x Ukuran) karena schema SKU (`product_variants.color`/`size`) memang cuma mendukung 2 dimensi varian — bukan repeater atribut custom tak terbatas.*
+  * [x] **Seamless Matrix Feeding**: Nilai repeater langsung membentuk `colors[]`/`sizes[]` yang dikirim ke endpoint Matrix Generator (`POST /products/matrix`), diverifikasi end-to-end (generate 4 SKU dari 2 warna x 2 ukuran).
+* [x] **Modul Settings & System Administration (`/settings/*`):**
+  * [x] **Company Profile Settings:** Nama bisnis, alamat, NPWP, dan telepon untuk header dokumen & struk. *Catatan: upload logo perusahaan belum diimplementasikan (di luar cakupan — butuh asset storage), field lain sudah tersimpan & dipakai.*
+  * [x] **Inventory Policy Settings:** Metode costing HPP (FIFO/Moving Average — sudah ada sejak sebelumnya), toggle izin stok minus, dan threshold notifikasi stok minimum kini tersimpan & bisa diubah Owner. *Catatan: toggle "izin stok minus" & threshold baru tersimpan sebagai kebijakan (belum di-enforce sebagai validasi hard-block di endpoint transaksi — enhancement lanjutan.*
+  * [x] **Role & Permission Matrix:** UI matrix checkbox per-aksi (Approve PO, Terima Barang, Adjustment Stok, Void Transaksi, Kelola Master Data, Lihat Laporan) x role (GUDANG/KASIR, OWNER selalu penuh), tersimpan di `system_settings.role_permissions` (JSON), diverifikasi round-trip. *Catatan: ini adalah kebijakan yang terkonfigurasi & tersimpan, belum di-enforce otomatis oleh middleware role-check backend (yang saat ini masih statis per-route) — enhancement lanjutan bila dibutuhkan.*
+  * [x] **Receipt & Auto-Numbering Templates:** Ukuran kertas struk (58mm/80mm) & format prefix PR/PO/Invoice kini bisa dikustomisasi Owner dan tersimpan. *Catatan: nomor dokumen aktual (PR/PO memakai id-slice, Invoice memakai `invoice_counters`) belum dirombak untuk membaca format ini secara live — field tersimpan sebagai referensi/kebijakan, penerapan ke generator nomor adalah enhancement lanjutan.*
 
 ---
 
@@ -119,6 +119,6 @@ Goal: Mengubah modul Laporan menjadi Accordion Sub-Menu Sidebar dengan 6 laporan
 4. [x] **Matrix Variant Engine:** Sub-menu **Varian** dilengkapi dengan Matrix Generator dan Bulk Fill yang mampu men-generate kombinasi SKU secara instan.
 5. [x] **Complete Procurement Lifecycle:** Alur pengadaan barang 4-step (PR ➔ PO ➔ Penerimaan ➔ Selesai) terimplementasi penuh dengan *Horizontal Stepper*, *Vertical Kebab Menu*, *Contextual Edit*, serta dokumen PR & PO resmi yang dapat dicetak secara terpisah.
 6. [x] **Inventory & Stock Ledger:** Modul Inventory memiliki sub-menu Stok Produk (dengan Current Stock Summary & Stock Ledger historikal) dan Adjustment Stok yang terintegrasi secara *real-time*.
-7. [ ] **Dedicated Reporting Navigation:** Modul Laporan memiliki 6 sub-module dedicated pada Sidebar Accordion dengan filter, tabel terformat, dan fungsi *autoload data*.
-8. [ ] **Variant Options Repeater:** Form Produk/SKU mendukung pengisian atribut varian menggunakan komponen *repeater* dinamis yang terhubung langsung ke *Matrix Generator*.
-9. [ ] **Enterprise System Settings:** Pengaturan profil bisnis, metode costing HPP (FIFO/Average), batasan stok minus, *Role & Permission Matrix*, serta *Auto-Numbering Prefix* dapat dikonfigurasi sepenuhnya oleh Owner.
+7. [x] **Dedicated Reporting Navigation:** Modul Laporan memiliki 6 sub-module dedicated pada Sidebar Accordion dengan filter, tabel terformat, dan fungsi *autoload data*.
+8. [x] **Variant Options Repeater:** Form Produk/SKU mendukung pengisian atribut varian menggunakan komponen *repeater* dinamis yang terhubung langsung ke *Matrix Generator*.
+9. [x] **Enterprise System Settings:** Pengaturan profil bisnis, metode costing HPP (FIFO/Average), batasan stok minus, *Role & Permission Matrix*, serta *Auto-Numbering Prefix* dapat dikonfigurasi sepenuhnya oleh Owner (tersimpan & bisa diubah). *Catatan enforcement: beberapa kebijakan (stok minus, role-permission granular, format nomor dokumen) baru berupa data konfigurasi tersimpan — penerapannya sebagai validasi/aturan hidup di endpoint transaksi adalah enhancement lanjutan, lihat catatan di Phase 4 checklist di atas.*

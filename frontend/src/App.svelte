@@ -16,7 +16,7 @@
   import StockProducts from './routes/inventory/StockProducts.svelte';
   import AdjustmentList from './routes/inventory/AdjustmentList.svelte';
   import AdjustmentCreate from './routes/inventory/AdjustmentCreate.svelte';
-  import Reports from './routes/Reports.svelte';
+  import ReportView from './routes/reports/ReportView.svelte';
   import Settings from './routes/Settings.svelte';
   import ReceiptPrint from './routes/ReceiptPrint.svelte';
   import NotFound from './routes/NotFound.svelte';
@@ -38,7 +38,8 @@
     '/inventory/stock-products': StockProducts,
     '/inventory/stock-adjustments': AdjustmentList,
     '/inventory/stock-adjustments/create': AdjustmentCreate,
-    '/reports': Reports,
+    '/reports': ReportView,
+    '/reports/:slug': ReportView,
     '/settings': Settings,
     '/receipt/:id': ReceiptPrint,
     '*': NotFound,

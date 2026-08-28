@@ -9,6 +9,8 @@
   import AppSelect from '../../lib/components/AppSelect.svelte';
   import AppTable from '../../lib/components/AppTable.svelte';
   import AppToggle from '../../lib/components/AppToggle.svelte';
+  import VariantOptionsRepeater from '../../lib/components/VariantOptionsRepeater.svelte';
+  import type { VariantOptionRow } from '../../lib/components/VariantOptionsRepeater.types';
   import { tabConfig, type TabKey } from '../../lib/masterDataConfig';
 
   let { params } = $props<{ params?: { tab?: string; id?: string } }>();
@@ -41,8 +43,6 @@
           supplierId: '',
           material: '',
           basePrice: '',
-          colors: '',
-          sizes: '',
           isActive: 'true',
         };
       case 'variants':
@@ -51,6 +51,11 @@
   }
 
   let form = $state<Record<string, string>>(untrack(() => emptyFormFor((params?.tab as TabKey) ?? 'categories')));
+  // Product Variant Options Repeater (MVP 3 Phase 4) — feed langsung ke Matrix Generator saat create produk.
+  let variantOptionRows = $state<VariantOptionRow[]>([
+    { attribute: 'WARNA', values: '' },
+    { attribute: 'UKURAN', values: '' },
+  ]);
   let categories = $state<Array<{ id: string; name: string }>>([]);
   let uoms = $state<Array<{ id: string; name: string }>>([]);
   let suppliers = $state<Array<{ id: string; name: string }>>([]);
@@ -116,6 +121,10 @@
   async function loadForm() {
     errorMessage = '';
     form = emptyFormFor(activeTab);
+    variantOptionRows = [
+      { attribute: 'WARNA', values: '' },
+      { attribute: 'UKURAN', values: '' },
+    ];
     if (activeTab === 'products') {
       categories = await api.get<Array<{ id: string; name: string }>>('/categories');
       uoms = await api.get<Array<{ id: string; name: string }>>('/uoms');
@@ -252,14 +261,22 @@
         } else if (activeTab === 'discounts') {
           await api.post('/discounts', { name: form.name, type: form.type, value: Number(form.value) });
         } else if (activeTab === 'products') {
+          const colors = (variantOptionRows.find((r) => r.attribute === 'WARNA')?.values ?? '')
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean);
+          const sizes = (variantOptionRows.find((r) => r.attribute === 'UKURAN')?.values ?? '')
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean);
           await api.post('/products/matrix', {
             name: form.name,
             categoryId: form.categoryId,
             uomId: form.uomId,
             supplierId: form.supplierId || undefined,
             material: form.material || undefined,
-            colors: (form.colors ?? '').split(',').map((s) => s.trim()).filter(Boolean),
-            sizes: (form.sizes ?? '').split(',').map((s) => s.trim()).filter(Boolean),
+            colors,
+            sizes,
             basePrice: Number(form.basePrice),
           });
         }
@@ -366,8 +383,7 @@
         {#if !isEdit}
           <AppInput label="Material" name="material" bind:value={form.material} />
           <AppInput label="Harga Dasar" name="basePrice" required numeric bind:value={form.basePrice} />
-          <AppInput label="Warna (pisah koma)" name="colors" required bind:value={form.colors} placeholder="Hitam, Putih" />
-          <AppInput label="Ukuran (pisah koma)" name="sizes" required bind:value={form.sizes} placeholder="S, M, L" />
+          <VariantOptionsRepeater bind:rows={variantOptionRows} />
         {:else}
           <AppToggle label="Status" checked={form.isActive === 'true'} onchange={(v) => (form.isActive = String(v))} />
         {/if}

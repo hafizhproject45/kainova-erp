@@ -41,7 +41,21 @@
         { href: '/inventory/stock-adjustments', label: 'Adjustment Stok' },
       ],
     },
-    { type: 'link' as const, href: '/reports', label: 'Laporan', roles: ['OWNER'], icon: ChartPieOutline },
+    {
+      type: 'group' as const,
+      label: 'Laporan',
+      basePath: '/reports',
+      roles: ['OWNER'],
+      icon: ChartPieOutline,
+      children: [
+        { href: '/reports/sales', label: 'Penjualan & Produk Terlaris' },
+        { href: '/reports/purchases', label: 'Pembelian per Supplier' },
+        { href: '/reports/inventory-valuation', label: 'Stok & Valuasi Inventaris' },
+        { href: '/reports/stock-adjustments', label: 'Adjustment Stok' },
+        { href: '/reports/profit-and-loss', label: 'Laba Rugi' },
+        { href: '/reports/payment-reconciliation', label: 'Rekonsiliasi Pembayaran' },
+      ],
+    },
     { type: 'link' as const, href: '/settings', label: 'Settings', roles: ['OWNER'], icon: CogOutline },
   ];
 

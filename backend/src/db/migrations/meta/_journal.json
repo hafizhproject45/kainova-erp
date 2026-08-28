@@ -50,6 +50,13 @@
       "when": 1787905764368,
       "tag": "0006_flat_black_tarantula",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1787908963344,
+      "tag": "0007_hot_riptide",
+      "breakpoints": true
     }
   ]
 }

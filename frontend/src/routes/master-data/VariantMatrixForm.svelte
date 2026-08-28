@@ -8,22 +8,30 @@
   import AppButton from '../../lib/components/AppButton.svelte';
   import AppInput from '../../lib/components/AppInput.svelte';
   import AppSelect from '../../lib/components/AppSelect.svelte';
+  import VariantOptionsRepeater from '../../lib/components/VariantOptionsRepeater.svelte';
+  import type { VariantOptionRow } from '../../lib/components/VariantOptionsRepeater.types';
 
   let products = $state<Array<{ id: string; name: string }>>([]);
   let productId = $state('');
   let material = $state('');
-  let colors = $state('');
-  let sizes = $state('');
+  let variantOptionRows = $state<VariantOptionRow[]>([
+    { attribute: 'WARNA', values: '' },
+    { attribute: 'UKURAN', values: '' },
+  ]);
   let basePrice = $state('');
   let initialStock = $state('0');
   let saving = $state(false);
   let errorMessage = $state('');
 
-  const previewCombos = $derived.by(() => {
-    const c = colors.split(',').map((s) => s.trim()).filter(Boolean);
-    const s = sizes.split(',').map((s2) => s2.trim()).filter(Boolean);
-    return c.flatMap((color) => s.map((size) => `${color} / ${size}`));
-  });
+  // Seamless Matrix Feeding (MVP 3 Phase 4) — nilai repeater langsung jadi input Matrix Generator.
+  const colors = $derived(
+    (variantOptionRows.find((r) => r.attribute === 'WARNA')?.values ?? '').split(',').map((s) => s.trim()).filter(Boolean),
+  );
+  const sizes = $derived(
+    (variantOptionRows.find((r) => r.attribute === 'UKURAN')?.values ?? '').split(',').map((s) => s.trim()).filter(Boolean),
+  );
+
+  const previewCombos = $derived.by(() => colors.flatMap((color) => sizes.map((size) => `${color} / ${size}`)));
 
   async function loadProducts() {
     try {
@@ -41,8 +49,8 @@
     try {
       await api.post(`/products/${productId}/variants/matrix`, {
         material: material || undefined,
-        colors: colors.split(',').map((s) => s.trim()).filter(Boolean),
-        sizes: sizes.split(',').map((s) => s.trim()).filter(Boolean),
+        colors,
+        sizes,
         basePrice: Number(basePrice),
         initialStock: initialStock ? Number(initialStock) : 0,
       });
@@ -77,8 +85,7 @@
     />
     <AppInput label="Material" name="material" bind:value={material} />
     <AppInput label="Harga Dasar (Bulk Fill)" name="basePrice" required numeric bind:value={basePrice} />
-    <AppInput label="Warna (pisah koma)" name="colors" required bind:value={colors} placeholder="Hitam, Putih" />
-    <AppInput label="Ukuran (pisah koma)" name="sizes" required bind:value={sizes} placeholder="S, M, L" />
+    <VariantOptionsRepeater bind:rows={variantOptionRows} />
     <AppInput label="Stok Awal (Bulk Fill)" name="initialStock" numeric bind:value={initialStock} class="sm:col-span-2" />
 
     {#if previewCombos.length > 0}
