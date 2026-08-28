@@ -13,6 +13,20 @@ export const categories = pgTable('categories', {
 });
 
 // ---------------------------------------------------------------------------
+// Unit of Measure (UOM) — mis. Pcs, Pack, Lusin, Meter
+// ---------------------------------------------------------------------------
+
+export const uoms = pgTable('uoms', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  code: varchar('code', { length: 20 }).notNull().unique(),
+  name: varchar('name', { length: 100 }).notNull(),
+  description: text('description'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  deletedAt: timestamp('deleted_at'),
+});
+
+// ---------------------------------------------------------------------------
 // Products & Matrix SKU
 // ---------------------------------------------------------------------------
 
@@ -20,6 +34,9 @@ export const products = pgTable('products', {
   id: uuid('id').defaultRandom().primaryKey(),
   name: varchar('name', { length: 255 }).notNull(),
   categoryId: uuid('category_id').references(() => categories.id).notNull(),
+  // UOM di-set pada produk parent & berlaku untuk seluruh varian SKU di bawahnya
+  // (lihat DEVELOPMENT_ROADMAP_MVP_2.md Phase 2 — dropdown UOM wajib di form Produk).
+  uomId: uuid('uom_id').references(() => uoms.id),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
   deletedAt: timestamp('deleted_at'),

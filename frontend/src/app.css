@@ -3,6 +3,11 @@
 /* Scan Flowbite Svelte component classes yang di-generate secara dinamis. */
 @source '../node_modules/flowbite-svelte/dist';
 
+/* KaiNova ERP belum punya desain dark mode (di luar scope MVP 2). Kunci varian `dark:`
+   Flowbite ke class-based (butuh <html class="dark">, yang tidak pernah kita pasang)
+   supaya tidak otomatis aktif ikut preferensi sistem OS dan merusak tampilan light. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme {
   --font-sans: system-ui, 'Segoe UI', Roboto, sans-serif;
 

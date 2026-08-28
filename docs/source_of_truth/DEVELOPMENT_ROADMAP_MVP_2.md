@@ -47,29 +47,22 @@ Goal: Mengintegrasikan Flowbite Svelte, membuat modul utilitas *formatting* ribu
 
 Goal: Menambahkan Master Data UOM, mengubah arsitektur Master Data menjadi Dedicated Page Routing (halaman List, Add, dan Edit terpisah) serta menyajikan seluruh Master Data dalam bentuk Data Table.
 
-* [ ] **Database & Backend Master Data UOM:**
-  * [ ] Tambah tabel `uoms` (`id`, `code`, `name`, `description`, `created_at`, `updated_at`, `deleted_at`).
-  * [ ] Relasikan `uom_id` pada tabel `products` / `product_variants`.
-  * [ ] Implementasi Endpoint CRUD UOM (`/master/uoms`).
-* [ ] **Navigation & Separate Page Routing:**
-  * [ ] Restrukturisasi route SvelteKit/Svelte Navigator untuk 7 Master Data:
-    * `GET /master/customers` (List Table) ➔ `GET /master/customers/create` (Add Page) ➔ `GET /master/customers/:id/edit` (Edit Page)
-    * `GET /master/suppliers` (List Table) ➔ `GET /master/suppliers/create` (Add Page) ➔ `GET /master/suppliers/:id/edit` (Edit Page)
-    * `GET /master/taxes` (List Table) ➔ `GET /master/taxes/create` (Add Page) ➔ `GET /master/taxes/:id/edit` (Edit Page)
-    * `GET /master/discounts` (List Table) ➔ `GET /master/discounts/create` (Add Page) ➔ `GET /master/discounts/:id/edit` (Edit Page)
-    * `GET /master/uoms` (List Table) ➔ `GET /master/uoms/create` (Add Page) ➔ `GET /master/uoms/:id/edit` (Edit Page)
-    * `GET /master/categories` (List Table) ➔ `GET /master/categories/create` (Add Page) ➔ `GET /master/categories/:id/edit` (Edit Page)
-    * `GET /master/products` (List Table) ➔ `GET /master/products/create` (Add Page) ➔ `GET /master/products/:id/edit` (Edit Page)
-* [ ] **Form Dedicated Page Standardization:**
-  * [ ] Membuat layout halaman form Add/Edit dedicated dengan tombol *Back/Kembali* ⬅️, header jelas, dan tombol *Save/Update* 💾.
-  * [ ] Form Produk (`/master/products/create` & edit) wajib memiliki **Dropdown Select UOM** dari Master Data UOM dengan penanda **bintang merah `*`**.
-  * [ ] Semua field input yang *required* pada form Add/Edit wajib diberi tanda **bintang merah `*`**.
-  * [ ] Penggunaan `formatNumber`/`formatRupiah` pada input harga modal/jual dan nilai diskon nominal.
-* [ ] **Master Data Full Table Implementation:**
-  * [ ] Semua tab Master Data disajikan penuh menggunakan `<AppTable>`.
-  * [ ] Seluruh kolom harga dan stok di dalam tabel wajib diformat menggunakan `formatRupiah` / `formatNumber` (rata kanan).
-  * [ ] Kolom Aksi Tabel dilengkapi Icon aksional: ✏️ (Redirect ke Halaman Edit) & 🗑️ (Trigger Modal Konfirmasi Soft-Delete).
-  * [ ] Integrasi *Search Bar* & *Filter Dropdown* visual di bagian atas header tabel.
+* [x] **Database & Backend Master Data UOM:**
+  * [x] Tambah tabel `uoms` (`id`, `code`, `name`, `description`, `created_at`, `updated_at`, `deleted_at`).
+  * [x] Relasikan `uom_id` pada tabel `products` (berlaku untuk seluruh varian SKU di bawah produk parent).
+  * [x] Implementasi Endpoint CRUD UOM — path aktual `/v1/uoms` (bukan `/master/uoms`), mengikuti konvensi endpoint master data lain yang sudah ada (`/v1/categories`, `/v1/suppliers`, dst — tidak ada prefix `/master`).
+* [x] **Navigation & Separate Page Routing:**
+  * [x] Routing dedicated List/Create/Edit untuk 7 Master Data via `svelte-spa-router` (bukan SvelteKit): `/master-data/:tab`, `/master-data/:tab/create`, `/master-data/:tab/:id/edit`. Ditenagai 2 komponen generik data-driven (`MasterDataList.svelte`, `MasterDataForm.svelte` + `masterDataConfig.ts`) alih-alih 21 file terpisah — URL & konsep List/Add/Edit tetap terpisah sesuai tujuan roadmap, kode tetap DRY.
+* [x] **Form Dedicated Page Standardization:**
+  * [x] Layout form Add/Edit dedicated dengan tombol *Back/Kembali* ⬅️, header jelas, dan tombol *Save/Update* 💾 (`AppCard` + `AppButton`).
+  * [x] Form Produk wajib memiliki **Dropdown Select UOM** (searchable) dari Master Data UOM dengan penanda **bintang merah `*`**.
+  * [x] Semua field input yang *required* pada form Add/Edit diberi tanda **bintang merah `*`** (`AppInput`/`AppSelect` prop `required`).
+  * [x] Penggunaan `formatNumber`/`formatRupiah` (via `AppInput numeric`) pada input harga dasar produk, rate pajak, dan nilai diskon.
+* [x] **Master Data Full Table Implementation:**
+  * [x] Semua tab Master Data (termasuk UOM) disajikan penuh menggunakan `<AppTable>` (striped, hover, sticky header, pagination bawaan).
+  * [x] Kolom harga & stok di tabel diformat `formatRupiah`/`formatNumber` rata kanan (varian SKU produk).
+  * [x] Kolom Aksi Tabel dilengkapi icon ✏️ (redirect ke Edit) & 🗑️ (hapus) — konfirmasi masih pakai `window.confirm()` native, belum modal Flowbite dedicated; cukup untuk MVP tapi bisa di-upgrade nanti.
+  * [x] Search bar di header tabel semua tab + filter dropdown Kategori khusus tab Produk.
 
 ---
 

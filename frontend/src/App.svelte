@@ -4,7 +4,8 @@
   import Layout from './lib/Layout.svelte';
   import Login from './routes/Login.svelte';
   import Dashboard from './routes/Dashboard.svelte';
-  import MasterData from './routes/MasterData.svelte';
+  import MasterDataList from './routes/master-data/MasterDataList.svelte';
+  import MasterDataForm from './routes/master-data/MasterDataForm.svelte';
   import Pos from './routes/Pos.svelte';
   import Purchasing from './routes/Purchasing.svelte';
   import StockAdjustment from './routes/StockAdjustment.svelte';
@@ -15,8 +16,10 @@
 
   const routes = {
     '/': Dashboard,
-    '/master-data': MasterData,
-    '/master-data/:tab': MasterData,
+    '/master-data': MasterDataList,
+    '/master-data/:tab': MasterDataList,
+    '/master-data/:tab/create': MasterDataForm,
+    '/master-data/:tab/:id/edit': MasterDataForm,
     '/pos': Pos,
     '/purchasing': Purchasing,
     '/stock-adjustment': StockAdjustment,

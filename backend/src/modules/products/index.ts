@@ -64,14 +64,18 @@ export const productsRoutes = new Elysia()
       }
       const [row] = await db
         .update(products)
-        .set({ name: body.name, categoryId: body.category_id, updatedAt: new Date() })
+        .set({ name: body.name, categoryId: body.category_id, uomId: body.uom_id, updatedAt: new Date() })
         .where(and(eq(products.id, params.id), isNull(products.deletedAt)))
         .returning();
       if (!row) throw new NotFoundError('Produk tidak ditemukan');
       return ok(row, 'Produk berhasil diperbarui');
     },
     {
-      body: t.Object({ name: t.Optional(t.String()), category_id: t.Optional(t.String()) }),
+      body: t.Object({
+        name: t.Optional(t.String()),
+        category_id: t.Optional(t.String()),
+        uom_id: t.Optional(t.String()),
+      }),
       requireRole: ['OWNER'],
     },
   )
@@ -101,7 +105,7 @@ export const productsRoutes = new Elysia()
 
       const [product] = await db
         .insert(products)
-        .values({ name: body.name, categoryId: body.category_id })
+        .values({ name: body.name, categoryId: body.category_id, uomId: body.uom_id })
         .returning();
 
       // Generate matrix SKU dari kombinasi colors x sizes (lihat PRODUCT_KNOWLEDGE.md §2).
@@ -125,6 +129,7 @@ export const productsRoutes = new Elysia()
       body: t.Object({
         name: t.String(),
         category_id: t.String(),
+        uom_id: t.Optional(t.String()),
         material: t.Optional(t.String()),
         colors: t.Array(t.String()),
         sizes: t.Array(t.String()),
