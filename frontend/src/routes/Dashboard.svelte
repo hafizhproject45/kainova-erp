@@ -3,21 +3,34 @@
   import { api, ApiClientError } from '../lib/api';
   import { formatNumber, formatRupiah } from '../lib/utils/formatters';
   import AppTable from '../lib/components/AppTable.svelte';
+  import LineChart from '../lib/components/LineChart.svelte';
+  import DonutChart from '../lib/components/DonutChart.svelte';
 
   interface DashboardSummary {
     todayRevenue: number;
     todayTransactions: number;
     grossProfitToday: number;
+    totalPurchasingSpendThisMonth: number;
     lowStockAlerts: Array<{ sku: string; totalStock: number; rop: number }>;
     revenueTrend: Array<{ date: string; revenue: number }>;
     topSellingProducts: Array<{ sku: string; productName: string; qtySold: number }>;
+    salesByCategory: Array<{ categoryName: string; revenue: number }>;
+    salesByPaymentMethod: Array<{ method: string; revenue: number }>;
   }
 
   let summary = $state<DashboardSummary | null>(null);
   let errorMessage = $state('');
   let loading = $state(true);
 
-  const maxTrendRevenue = $derived(Math.max(1, ...(summary?.revenueTrend.map((t) => t.revenue) ?? [1])));
+  const trendPoints = $derived(
+    (summary?.revenueTrend ?? []).map((t) => ({ label: shortDate(t.date), value: t.revenue })),
+  );
+  const categorySegments = $derived(
+    (summary?.salesByCategory ?? []).map((c) => ({ label: c.categoryName, value: c.revenue })),
+  );
+  const paymentSegments = $derived(
+    (summary?.salesByPaymentMethod ?? []).map((p) => ({ label: p.method, value: p.revenue })),
+  );
 
   function shortDate(iso: string): string {
     const d = new Date(iso + 'T00:00:00');
@@ -42,7 +55,7 @@
 {:else if errorMessage}
   <p class="text-sm text-red-600">{errorMessage}</p>
 {:else if summary}
-  <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+  <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
     <div class="rounded-xl border border-slate-200 bg-white p-5">
       <p class="text-xs font-medium text-slate-500">Omset Hari Ini</p>
       <p class="mt-2 text-2xl font-semibold text-slate-900">{formatRupiah(summary.todayRevenue)}</p>
@@ -55,6 +68,10 @@
       <p class="text-xs font-medium text-slate-500">Laba Kotor Hari Ini</p>
       <p class="mt-2 text-2xl font-semibold text-slate-900">{formatRupiah(summary.grossProfitToday)}</p>
     </div>
+    <div class="rounded-xl border border-slate-200 bg-white p-5">
+      <p class="text-xs font-medium text-slate-500">Total PO Bulan Ini</p>
+      <p class="mt-2 text-2xl font-semibold text-slate-900">{formatRupiah(summary.totalPurchasingSpendThisMonth)}</p>
+    </div>
   </div>
 
   <div class="mt-6 rounded-xl border border-slate-200 bg-white p-5">
@@ -62,20 +79,19 @@
     {#if summary.revenueTrend.every((t) => t.revenue === 0)}
       <p class="text-sm text-slate-500">Belum ada transaksi dalam 7 hari terakhir.</p>
     {:else}
-      <div class="flex gap-2 sm:gap-4" style="height: 160px">
-        {#each summary.revenueTrend as t (t.date)}
-          <div class="flex flex-1 flex-col items-center gap-1" title={`${shortDate(t.date)}: ${formatRupiah(t.revenue)}`}>
-            <div class="flex w-full flex-1 items-end">
-              <div
-                class="w-full rounded-t bg-primary-500 transition-all"
-                style="height: {Math.max(2, (t.revenue / maxTrendRevenue) * 100)}%"
-              ></div>
-            </div>
-            <span class="text-[10px] text-slate-500 sm:text-xs">{shortDate(t.date)}</span>
-          </div>
-        {/each}
-      </div>
+      <LineChart points={trendPoints} />
     {/if}
+  </div>
+
+  <div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
+    <div class="rounded-xl border border-slate-200 bg-white p-5">
+      <h2 class="mb-3 text-sm font-semibold text-slate-800">Penjualan per Kategori (30 Hari)</h2>
+      <DonutChart segments={categorySegments} />
+    </div>
+    <div class="rounded-xl border border-slate-200 bg-white p-5">
+      <h2 class="mb-3 text-sm font-semibold text-slate-800">Penjualan per Kanal Pembayaran (30 Hari)</h2>
+      <DonutChart segments={paymentSegments} />
+    </div>
   </div>
 
   <div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">

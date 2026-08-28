@@ -39,6 +39,9 @@ export const products = pgTable('products', {
   // UOM di-set pada produk parent & berlaku untuk seluruh varian SKU di bawahnya
   // (lihat DEVELOPMENT_ROADMAP_MVP_2.md Phase 2 — dropdown UOM wajib di form Produk).
   uomId: uuid('uom_id').references(() => uoms.id),
+  // Default Supplier (MVP 3 Phase 1) — mempermudah alur pengadaan di modul Pembelian,
+  // opsional karena produk lama belum tentu punya supplier tunggal.
+  supplierId: uuid('supplier_id').references(() => suppliers.id),
   isActive: boolean('is_active').default(true).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),

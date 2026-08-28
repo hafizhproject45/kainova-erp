@@ -15,13 +15,19 @@ export const productsRoutes = new Elysia()
     async ({ query }) => {
       const conditions = [isNull(products.deletedAt)];
       if (query.category_id) conditions.push(eq(products.categoryId, query.category_id));
+      // Relasi Default Supplier (MVP 3 Phase 1) — Pembelian bisa pre-filter produk per supplier.
+      if (query.supplier_id) conditions.push(eq(products.supplierId, query.supplier_id));
       // MVP 3 Phase 1: Strict Filtering — form POS/Pembelian/Adjustment memanggil ?is_active=true
       // supaya produk non-aktif otomatis tersembunyi dari transaksi baru.
       if (query.is_active !== undefined) conditions.push(eq(products.isActive, query.is_active === 'true'));
       return ok(await db.select().from(products).where(and(...conditions)));
     },
     {
-      query: t.Object({ category_id: t.Optional(t.String()), is_active: t.Optional(t.String()) }),
+      query: t.Object({
+        category_id: t.Optional(t.String()),
+        supplier_id: t.Optional(t.String()),
+        is_active: t.Optional(t.String()),
+      }),
       requireRole: ['OWNER', 'GUDANG', 'KASIR'],
     },
   )
@@ -100,6 +106,8 @@ export const productsRoutes = new Elysia()
           name: body.name,
           categoryId: body.category_id,
           uomId: body.uom_id,
+          // Default Supplier (MVP 3 Phase 1) — string kosong berarti "hapus relasi supplier".
+          supplierId: body.supplier_id === '' ? null : body.supplier_id,
           isActive: body.is_active,
           updatedAt: new Date(),
         })
@@ -113,6 +121,7 @@ export const productsRoutes = new Elysia()
         name: t.Optional(t.String()),
         category_id: t.Optional(t.String()),
         uom_id: t.Optional(t.String()),
+        supplier_id: t.Optional(t.String()),
         is_active: t.Optional(t.Boolean()),
       }),
       requireRole: ['OWNER'],
@@ -157,7 +166,7 @@ export const productsRoutes = new Elysia()
 
       const [product] = await db
         .insert(products)
-        .values({ name: body.name, categoryId: body.category_id, uomId: body.uom_id })
+        .values({ name: body.name, categoryId: body.category_id, uomId: body.uom_id, supplierId: body.supplier_id })
         .returning();
 
       // Generate matrix SKU dari kombinasi colors x sizes (lihat PRODUCT_KNOWLEDGE.md §2).
@@ -183,6 +192,7 @@ export const productsRoutes = new Elysia()
         name: t.String(),
         category_id: t.String(),
         uom_id: t.Optional(t.String()),
+        supplier_id: t.Optional(t.String()),
         material: t.Optional(t.String()),
         colors: t.Array(t.String()),
         sizes: t.Array(t.String()),

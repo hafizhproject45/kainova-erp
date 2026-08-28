@@ -3,9 +3,8 @@
   import type { Snippet } from 'svelte';
   import { formatNumber, formatRupiah } from '../utils/formatters';
   import AppBadge from './AppBadge.svelte';
-  import AppToggle from './AppToggle.svelte';
 
-  type ColumnFormat = 'text' | 'number' | 'currency' | 'badge' | 'toggle';
+  type ColumnFormat = 'text' | 'number' | 'currency' | 'badge';
 
   export type AppTableColumn = {
     key: string;
@@ -24,7 +23,6 @@
     rowActions,
     totals,
     totalsLabel = 'Total',
-    onToggleActive,
   }: {
     columns: AppTableColumn[];
     rows: Record<string, unknown>[];
@@ -35,8 +33,6 @@
     /** Baris ringkasan (jumlah kolom numerik) ditampilkan tebal di bawah tabel — dipakai Laporan. */
     totals?: Record<string, unknown>;
     totalsLabel?: string;
-    /** Handler Inline Quick Toggle (MVP 3 Phase 1) — dipanggil saat kolom format 'toggle' diklik. */
-    onToggleActive?: (row: Record<string, unknown>, next: boolean) => void;
   } = $props();
 
   let sortKey = $state<string | null>(null);
@@ -127,11 +123,6 @@
               <TableBodyCell class={alignClass(col.align)}>
                 {#if col.format === 'badge'}
                   <AppBadge status={String(row[col.key] ?? '')} />
-                {:else if col.format === 'toggle'}
-                  <AppToggle
-                    checked={Boolean(row[col.key])}
-                    onchange={(next) => onToggleActive?.(row, next)}
-                  />
                 {:else}
                   {formatCell(row[col.key], col.format)}
                 {/if}

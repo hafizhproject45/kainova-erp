@@ -16,6 +16,7 @@
   interface Product {
     id: string;
     name: string;
+    supplierId?: string | null;
   }
   interface Variant {
     id: string;
@@ -42,6 +43,13 @@
   let errorMessage = $state('');
   let saving = $state(false);
 
+  // Relasi Default Supplier (MVP 3 Phase 1) — begitu supplier dipilih, daftar produk
+  // dipersempit ke produk yang default supplier-nya cocok (mempermudah alur pengadaan);
+  // produk tanpa default supplier tetap tampil supaya tidak menghalangi PO ad-hoc.
+  const productOptions = $derived(
+    supplierId ? products.filter((p) => !p.supplierId || p.supplierId === supplierId) : products,
+  );
+
   onMount(async () => {
     try {
       // MVP 3 Phase 1: Strict Filtering — hanya supplier/produk aktif yang bisa dipilih di pengajuan pembelian.
@@ -50,6 +58,11 @@
     } catch (err) {
       errorMessage = err instanceof ApiClientError ? err.message : 'Gagal memuat data';
     }
+  });
+
+  $effect(() => {
+    supplierId;
+    if (productId && !productOptions.some((p) => p.id === productId)) productId = '';
   });
 
   $effect(() => {
@@ -117,7 +130,7 @@
         <AppSelect
           label="Produk"
           name="productId"
-          items={products.map((p) => ({ value: p.id, name: p.name }))}
+          items={productOptions.map((p) => ({ value: p.id, name: p.name }))}
           bind:value={productId}
         />
         {#if variants.length > 0}

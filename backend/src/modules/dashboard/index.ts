@@ -1,7 +1,15 @@
 import { Elysia, t } from 'elysia';
 import { and, eq, gte, inArray, isNull, lt } from 'drizzle-orm';
 import { db } from '../../config/database';
-import { productVariants, products, salesOrderItems, salesOrders } from '../../db/schema';
+import {
+  categories,
+  productVariants,
+  products,
+  purchaseOrderItems,
+  purchaseOrders,
+  salesOrderItems,
+  salesOrders,
+} from '../../db/schema';
 import { authPlugin } from '../auth';
 import { ok } from '../../utils/http';
 
@@ -119,13 +127,71 @@ export const dashboardRoutes = new Elysia({ prefix: '/dashboard' }).use(authPlug
       revenueTrend.push({ date: key, revenue: revenueByDate.get(key) ?? 0 });
     }
 
+    // MVP 3 Phase 1: Interactive Visual Dashboard — breakdown untuk Pie/Donut Chart
+    // (30 hari terakhir, basis lookback sama dengan Top Selling Products di atas).
+    const salesItemRows = await db
+      .select({
+        productId: productVariants.productId,
+        lineTotal: salesOrderItems.lineTotal,
+      })
+      .from(salesOrderItems)
+      .innerJoin(salesOrders, eq(salesOrders.id, salesOrderItems.salesOrderId))
+      .innerJoin(productVariants, eq(productVariants.id, salesOrderItems.variantId))
+      .where(gte(salesOrders.createdAt, lookbackStart));
+
+    const categoryIdByProductId = new Map(
+      (await db.select({ id: products.id, categoryId: products.categoryId }).from(products)).map((p) => [
+        p.id,
+        p.categoryId,
+      ]),
+    );
+    const categoryNameById = new Map(
+      (await db.select({ id: categories.id, name: categories.name }).from(categories)).map((c) => [c.id, c.name]),
+    );
+    const revenueByCategory = new Map<string, number>();
+    for (const row of salesItemRows) {
+      const categoryId = categoryIdByProductId.get(row.productId);
+      const label = categoryId ? (categoryNameById.get(categoryId) ?? 'Lainnya') : 'Lainnya';
+      revenueByCategory.set(label, (revenueByCategory.get(label) ?? 0) + Number(row.lineTotal));
+    }
+    const salesByCategory = [...revenueByCategory.entries()]
+      .map(([categoryName, revenue]) => ({ categoryName, revenue }))
+      .sort((a, b) => b.revenue - a.revenue);
+
+    const paymentRows = await db
+      .select({ paymentMethod: salesOrders.paymentMethod, grandTotal: salesOrders.grandTotal })
+      .from(salesOrders)
+      .where(gte(salesOrders.createdAt, lookbackStart));
+    const revenueByPaymentMethod = new Map<string, number>();
+    for (const row of paymentRows) {
+      revenueByPaymentMethod.set(
+        row.paymentMethod,
+        (revenueByPaymentMethod.get(row.paymentMethod) ?? 0) + Number(row.grandTotal),
+      );
+    }
+    const salesByPaymentMethod = [...revenueByPaymentMethod.entries()]
+      .map(([method, revenue]) => ({ method, revenue }))
+      .sort((a, b) => b.revenue - a.revenue);
+
+    // KPI "Total PO Pengeluaran" — total belanja pembelian bulan berjalan (qty x unit_cost).
+    const monthStart = new Date(startOfDay.getFullYear(), startOfDay.getMonth(), 1);
+    const poItemRows = await db
+      .select({ qty: purchaseOrderItems.qty, unitCost: purchaseOrderItems.unitCost })
+      .from(purchaseOrderItems)
+      .innerJoin(purchaseOrders, eq(purchaseOrders.id, purchaseOrderItems.purchaseOrderId))
+      .where(gte(purchaseOrders.createdAt, monthStart));
+    const totalPurchasingSpendThisMonth = poItemRows.reduce((sum, r) => sum + r.qty * Number(r.unitCost), 0);
+
     return ok({
       todayRevenue,
       todayTransactions: todayOrders.length,
       grossProfitToday,
+      totalPurchasingSpendThisMonth,
       lowStockAlerts,
       revenueTrend,
       topSellingProducts,
+      salesByCategory,
+      salesByPaymentMethod,
     });
   },
   { query: t.Object({ date: t.Optional(t.String()) }), requireRole: ['OWNER'] },

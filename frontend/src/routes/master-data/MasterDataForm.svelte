@@ -38,6 +38,7 @@
           name: '',
           categoryId: '',
           uomId: '',
+          supplierId: '',
           material: '',
           basePrice: '',
           colors: '',
@@ -52,6 +53,7 @@
   let form = $state<Record<string, string>>(untrack(() => emptyFormFor((params?.tab as TabKey) ?? 'categories')));
   let categories = $state<Array<{ id: string; name: string }>>([]);
   let uoms = $state<Array<{ id: string; name: string }>>([]);
+  let suppliers = $state<Array<{ id: string; name: string }>>([]);
   let loading = $state(false);
   let saving = $state(false);
   let errorMessage = $state('');
@@ -117,6 +119,7 @@
     if (activeTab === 'products') {
       categories = await api.get<Array<{ id: string; name: string }>>('/categories');
       uoms = await api.get<Array<{ id: string; name: string }>>('/uoms');
+      suppliers = await api.get<Array<{ id: string; name: string }>>('/suppliers');
     }
     if (!editingId) return;
 
@@ -152,6 +155,7 @@
           name: String(row.name ?? ''),
           categoryId: String(row.categoryId ?? ''),
           uomId: String(row.uomId ?? ''),
+          supplierId: String(row.supplierId ?? ''),
           isActive: String(row.isActive ?? 'true'),
         };
         await loadVariants();
@@ -227,6 +231,7 @@
             name: form.name,
             categoryId: form.categoryId,
             uomId: form.uomId,
+            supplierId: form.supplierId || '',
             isActive: form.isActive === 'true',
           });
         }
@@ -251,6 +256,7 @@
             name: form.name,
             categoryId: form.categoryId,
             uomId: form.uomId,
+            supplierId: form.supplierId || undefined,
             material: form.material || undefined,
             colors: (form.colors ?? '').split(',').map((s) => s.trim()).filter(Boolean),
             sizes: (form.sizes ?? '').split(',').map((s) => s.trim()).filter(Boolean),
@@ -349,6 +355,13 @@
           required
           items={uoms.map((u) => ({ value: u.id, name: u.name }))}
           bind:value={form.uomId}
+        />
+        <AppSelect
+          label="Default Supplier"
+          name="supplierId"
+          placeholder="Tanpa supplier default"
+          items={suppliers.map((s) => ({ value: s.id, name: s.name }))}
+          bind:value={form.supplierId}
         />
         {#if !isEdit}
           <AppInput label="Material" name="material" bind:value={form.material} />

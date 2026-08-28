@@ -28,7 +28,9 @@ export function tabConfig(key: TabKey) {
   return MASTER_DATA_TABS.find((t) => t.key === key) ?? MASTER_DATA_TABS[0]!;
 }
 
-const statusColumn: AppTableColumn = { key: 'isActive', label: 'Status', format: 'toggle' };
+// Status ditampilkan sebagai badge display-only di tabel index — perubahan status
+// hanya dilakukan lewat form Add/Edit Master Data (AppToggle), bukan langsung dari tabel.
+const statusColumn: AppTableColumn = { key: 'statusLabel', label: 'Status', format: 'badge' };
 
 export function columnsFor(tab: TabKey): AppTableColumn[] {
   switch (tab) {
@@ -46,6 +48,7 @@ export function columnsFor(tab: TabKey): AppTableColumn[] {
         { key: 'name', label: 'Nama Produk' },
         { key: 'categoryName', label: 'Kategori' },
         { key: 'uomName', label: 'UOM' },
+        { key: 'supplierName', label: 'Default Supplier' },
         statusColumn,
       ];
     case 'variants':

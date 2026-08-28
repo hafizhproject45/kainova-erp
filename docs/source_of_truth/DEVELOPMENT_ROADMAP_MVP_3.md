@@ -24,12 +24,12 @@ MVP 3 berfokus pada **Interactive Visual Dashboard, Pembaruan Struktur Navigatio
 
 Goal: Meningkatkan visualisasi interaktif pada Dashboard, merestrukturisasi navigasi Master Data pada Sidebar, mengimplementasikan Toggle Switch `is_active` di seluruh 8 entity Master Data, memperbarui modul Varian dengan Matrix Generator, serta memastikan *Strict Filtering* berlaku pada modul transaksi.
 
-* [ ] **Interactive Visual Dashboard Enhancements (`/dashboard`):**
-  * [ ] Implementation komponen **Line Chart Interaktif**: Visualisasi tren omset penjualan (harian/bulanan) dengan *tooltip hover* / *tap* yang menampilkan detail nilai nominal terformat (`formatRupiah`).
-  * [ ] Implementation komponen **Pie / Donut Chart Interaktif**: Visualisasi proporsi penjualan per Kategori Produk dan Kanal Pembayaran dengan indikator persentase & interaksi sentuh/hover.
-  * [ ] KPI Cards Real-Time: Widget ringkasan Total Penjualan, Laba Kotor, Total PO Pendapatan, dan Alert Stok Minimum yang terhubung ke backend.
-* [ ] **Restrukturisasi Navigation Master Data (Sidebar Routes):**
-  * [ ] Pisahkan navigasi Master Data dari model tab tunggal menjadi **Accordion/Sub-Menu Dedicated** pada Sidebar:
+* [x] **Interactive Visual Dashboard Enhancements (`/dashboard`):**
+  * [x] Implementation komponen **Line Chart Interaktif**: Visualisasi tren omset penjualan (harian/bulanan) dengan *tooltip hover* / *tap* yang menampilkan detail nilai nominal terformat (`formatRupiah`) — `LineChart.svelte` (native SVG).
+  * [x] Implementation komponen **Pie / Donut Chart Interaktif**: Visualisasi proporsi penjualan per Kategori Produk dan Kanal Pembayaran dengan indikator persentase & interaksi sentuh/hover — `DonutChart.svelte`, didukung `salesByCategory`/`salesByPaymentMethod` di `GET /dashboard/summary`.
+  * [x] KPI Cards Real-Time: Widget ringkasan Total Penjualan, Laba Kotor, Total PO Bulan Ini, dan Alert Stok Minimum yang terhubung ke backend.
+* [x] **Restrukturisasi Navigation Master Data (Sidebar Routes):**
+  * [x] Pisahkan navigasi Master Data dari model tab tunggal menjadi **Accordion/Sub-Menu Dedicated** pada Sidebar:
     * `/master-data/categories` (Kategori)
     * `/master-data/products` (Produk & SKU)
     * `/master-data/variants` (Varian)
@@ -38,13 +38,13 @@ Goal: Meningkatkan visualisasi interaktif pada Dashboard, merestrukturisasi navi
     * `/master-data/taxes` (Pajak)
     * `/master-data/discounts` (Diskon)
     * `/master-data/uoms` (UOM)
-  * [ ] **Relasi Supplier pada Produk**: Penambahan field pilihan **Default Supplier** (`supplier_id`) pada form Master Data Produk/SKU untuk mempermudah alur pengadaan barang di modul Pembelian.
+  * [x] **Relasi Supplier pada Produk**: Penambahan field pilihan **Default Supplier** (`supplier_id`) pada form Master Data Produk/SKU untuk mempermudah alur pengadaan barang di modul Pembelian (auto-filter produk per supplier di form PO).
 * [x] **Standardisasi Component Toggle `is_active`:**
   * [x] Hapus seluruh komponen `AppSelect` (`Aktif` / `Non-Aktif`) pada form Add/Edit Master Data dan ganti dengan **Toggle Switch** berbasis Flowbite Svelte (`AppToggle.svelte`).
-  * [x] Implementasikan *Inline Quick Toggle* pada kolom status di `<AppTable>` untuk 8 Master Data (*Kategori, Produk & SKU, Varian, Supplier, Customer, Pajak, Diskon, UOM*) — optimistic update + `PATCH /:id/status`.
+  * [x] Kolom status di `<AppTable>` untuk 8 Master Data (*Kategori, Produk & SKU, Varian, Supplier, Customer, Pajak, Diskon, UOM*) ditampilkan sebagai badge **display-only** — perubahan status hanya lewat form Add/Edit (bukan Inline Quick Toggle di tabel, sesuai arahan revisi); `PATCH /:id/status` tetap tersedia di backend untuk kebutuhan API lain.
   * [x] Terapkan backend & frontend *Strict Filtering* (`WHERE is_active = true`) pada form POS, Pembelian, dan Adjustment Stok agar data non-aktif otomatis tersembunyikan dari transaksi baru (`?is_active=true` di seluruh GET terkait).
 * [x] **Module Varian & Matrix Generator Engine (`/master-data/variants`):**
-  * [x] Penyesuaian nama sub-menu dari "Master Varian" menjadi **Varian** dan URL route ke `/master-data/variants` (masih berbasis tab — restrukturisasi ke Sidebar Sub-Menu dedicated & Relasi Supplier di atas belum dikerjakan).
+  * [x] Penyesuaian nama sub-menu dari "Master Varian" menjadi **Varian** dan URL route ke `/master-data/variants`, kini sebagai sub-menu dedicated Sidebar Accordion (bukan tab).
   * [x] Fitur **Matrix Generator**: Opsi membuat kombinasi varian otomatis (misal: Ukuran `S, M, L` × Warna `Merah, Hitam`) menjadi entitas SKU terpisah secara massal (`VariantMatrixForm.svelte` + `POST /products/:id/variants/matrix`).
   * [x] Fitur **Bulk Fill**: Form pengisian massal untuk harga beli, harga jual, dan stok awal pada seluruh SKU yang dihasilkan oleh Matrix Generator (baked-in di form generator; `POST /product-variants/bulk-fill` tersedia untuk revisi massal lanjutan).
 
@@ -108,8 +108,8 @@ Goal: Mengubah modul Laporan menjadi Accordion Sub-Menu Sidebar dengan 6 laporan
 
 ## Definition of Done (DoD) - MVP 3
 
-1. [ ] **Interactive Visual Dashboard:** Dashboard dilengkapi dengan Line Chart & Pie/Donut Chart interaktif yang responsif terhadap interaksi pengguna (*hover/tap*).
-2. [ ] **Master Data Structure & Relasi:** Navigasi Master Data diakses melalui Sub-Menu Sidebar Dedicated, dan form Produk/SKU terintegrasi dengan relasi *Default Supplier*.
+1. [x] **Interactive Visual Dashboard:** Dashboard dilengkapi dengan Line Chart & Pie/Donut Chart interaktif yang responsif terhadap interaksi pengguna (*hover/tap*).
+2. [x] **Master Data Structure & Relasi:** Navigasi Master Data diakses melalui Sub-Menu Sidebar Dedicated, dan form Produk/SKU terintegrasi dengan relasi *Default Supplier*.
 3. [x] **Global Toggle Standard:** Komponen input `Select` status aktif/non-aktif pada 8 Master Data sepenuhnya diganti menggunakan Toggle Switch, serta *Strict Filtering* (`is_active = true`) berjalan konsisten di seluruh modul transaksi.
 4. [x] **Matrix Variant Engine:** Sub-menu **Varian** dilengkapi dengan Matrix Generator dan Bulk Fill yang mampu men-generate kombinasi SKU secara instan.
 5. [ ] **Complete Procurement Lifecycle:** Alur pengadaan barang 4-step (PR ➔ PO ➔ Penerimaan ➔ Selesai) terimplementasi penuh dengan *Horizontal Stepper*, *Vertical Kebab Menu*, *Contextual Edit*, serta dokumen PR & PO resmi yang dapat dicetak secara terpisah.
