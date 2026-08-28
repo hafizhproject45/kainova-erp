@@ -76,15 +76,15 @@ Goal: Mengembangkan modul Pembelian tingkat *enterprise* dengan alur 4-step peng
 
 Goal: Mengubah modul Adjustment Stok menjadi modul Inventory menyeluruh, menghadirkan Current Stock Summary, Stock Ledger historikal, serta kalkulasi costing HPP otomatis.
 
-* [ ] **Restructuring Sidebar Navigation:**
-  * [ ] Ubah nama modul utama Sidebar menjadi **Inventory** (`/inventory`).
-  * [ ] Buat 2 sub-module dedicated: **Stok Produk** (`/inventory/stock-products`) dan **Adjustment Stok** (`/inventory/stock-adjustments`).
-* [ ] **Sub-Module 1: Stok Produk & Stock Ledger (`/inventory/stock-products`):**
-  * [ ] **Current Stock Summary Panel:** Menampilkan daftar SKU aktif, kuantitas stok saat ini (*real-time Qty*), dan total nominal valuasi aset barang.
-  * [ ] **Stock Ledger Table (Kartu Stok Historikal):** Audit trail kronologis pergerakan barang memuat kolom Tanggal/Waktu, Nama SKU, Jenis Transaksi (*Penjualan, Pembelian, Adjustment, Retur*), Qty Masuk, Qty Keluar, Saldo Akhir Qty, HPP Unit, dan Total Nominal Valuasi.
-* [ ] **Sub-Module 2: Adjustment Stok (`/inventory/stock-adjustments`):**
-  * [ ] Form pencatatan penyesuaian stok opname (kerusakan, kehilangan, barang sampel) dengan verifikasi approval.
-  * [ ] Integrasi otomatis pencatatan adjustment ke dalam *Stock Ledger* saat transaksi di-post/disetujui.
+* [x] **Restructuring Sidebar Navigation:**
+  * [x] Ubah nama modul utama Sidebar menjadi **Inventory** (`/inventory`) — Accordion sub-menu (pola sama seperti Master Data Phase 1).
+  * [x] Buat 2 sub-module dedicated: **Stok Produk** (`/inventory/stock-products`) dan **Adjustment Stok** (`/inventory/stock-adjustments`).
+* [x] **Sub-Module 1: Stok Produk & Stock Ledger (`/inventory/stock-products`):**
+  * [x] **Current Stock Summary Panel:** Menampilkan daftar SKU aktif (Strict Filtering), kuantitas stok saat ini (*real-time Qty*), dan total nominal valuasi aset barang (`GET /inventory/stock-summary`).
+  * [x] **Stock Ledger Table (Kartu Stok Historikal):** Audit trail kronologis pergerakan barang per-SKU (drill-down dari Current Stock Summary) memuat kolom Tanggal/Waktu, Jenis Transaksi (*Penjualan, Pembelian, Adjustment*), Referensi, Qty Masuk, Qty Keluar, Saldo Akhir Qty (running balance), HPP Unit, dan Total Nominal Valuasi (`GET /inventory/stock-ledger`, digabung dari `inventory_batches`/`sales_order_items`/`stock_adjustment_items` — read-model tanpa tabel ledger terpisah). *Retur* belum ada modul sumbernya di MVP ini, jadi belum muncul sebagai jenis transaksi.
+* [x] **Sub-Module 2: Adjustment Stok (`/inventory/stock-adjustments`):**
+  * [x] Form pencatatan penyesuaian stok opname (kerusakan, kehilangan, barang sampel) dengan verifikasi approval (status `DRAFT` → `POSTED`, posting khusus role OWNER).
+  * [x] Integrasi otomatis pencatatan adjustment ke dalam *Stock Ledger* saat transaksi di-post/disetujui — otomatis karena Stock Ledger dibaca langsung dari `stock_adjustments`/`stock_adjustment_items` yang sudah `POSTED`.
 
 ---
 
@@ -118,7 +118,7 @@ Goal: Mengubah modul Laporan menjadi Accordion Sub-Menu Sidebar dengan 6 laporan
 3. [x] **Global Toggle Standard:** Komponen input `Select` status aktif/non-aktif pada 8 Master Data sepenuhnya diganti menggunakan Toggle Switch, serta *Strict Filtering* (`is_active = true`) berjalan konsisten di seluruh modul transaksi.
 4. [x] **Matrix Variant Engine:** Sub-menu **Varian** dilengkapi dengan Matrix Generator dan Bulk Fill yang mampu men-generate kombinasi SKU secara instan.
 5. [x] **Complete Procurement Lifecycle:** Alur pengadaan barang 4-step (PR ➔ PO ➔ Penerimaan ➔ Selesai) terimplementasi penuh dengan *Horizontal Stepper*, *Vertical Kebab Menu*, *Contextual Edit*, serta dokumen PR & PO resmi yang dapat dicetak secara terpisah.
-6. [ ] **Inventory & Stock Ledger:** Modul Inventory memiliki sub-menu Stok Produk (dengan Current Stock Summary & Stock Ledger historikal) dan Adjustment Stok yang terintegrasi secara *real-time*.
+6. [x] **Inventory & Stock Ledger:** Modul Inventory memiliki sub-menu Stok Produk (dengan Current Stock Summary & Stock Ledger historikal) dan Adjustment Stok yang terintegrasi secara *real-time*.
 7. [ ] **Dedicated Reporting Navigation:** Modul Laporan memiliki 6 sub-module dedicated pada Sidebar Accordion dengan filter, tabel terformat, dan fungsi *autoload data*.
 8. [ ] **Variant Options Repeater:** Form Produk/SKU mendukung pengisian atribut varian menggunakan komponen *repeater* dinamis yang terhubung langsung ke *Matrix Generator*.
 9. [ ] **Enterprise System Settings:** Pengaturan profil bisnis, metode costing HPP (FIFO/Average), batasan stok minus, *Role & Permission Matrix*, serta *Auto-Numbering Prefix* dapat dikonfigurasi sepenuhnya oleh Owner.

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { link, router } from 'svelte-spa-router';
   import {
-    AdjustmentsHorizontalOutline,
+    ArchiveOutline,
     ChartPieOutline,
     ChevronDownOutline,
     CogOutline,
@@ -15,13 +15,15 @@
 
   let { children } = $props();
 
-  // MVP 3 Phase 1: Master Data pindah dari model tab tunggal (di dalam halaman) menjadi
-  // Accordion Sub-Menu Dedicated di Sidebar — tiap entity langsung punya route sendiri.
+  // MVP 3 Phase 1 & 3: Master Data & Inventory pindah dari model tab tunggal/link datar
+  // menjadi Accordion Sub-Menu Dedicated di Sidebar — tiap entity/sub-module langsung
+  // punya route sendiri. `basePath` dipakai untuk auto-expand & highlight grup yang aktif.
   const navItems = [
     { type: 'link' as const, href: '/', label: 'Dashboard', roles: ['OWNER'], icon: GridOutline },
     {
       type: 'group' as const,
       label: 'Master Data',
+      basePath: '/master-data',
       roles: ['OWNER'],
       icon: TableColumnOutline,
       children: MASTER_DATA_TABS.map((t) => ({ href: `/master-data/${t.key}`, label: t.label })),
@@ -29,11 +31,15 @@
     { type: 'link' as const, href: '/pos', label: 'Penjualan (POS)', roles: ['OWNER', 'KASIR'], icon: ShoppingBagOutline },
     { type: 'link' as const, href: '/purchasing', label: 'Pembelian', roles: ['OWNER', 'GUDANG'], icon: TruckOutline },
     {
-      type: 'link' as const,
-      href: '/stock-adjustment',
-      label: 'Adjustment Stok',
+      type: 'group' as const,
+      label: 'Inventory',
+      basePath: '/inventory',
       roles: ['OWNER', 'GUDANG'],
-      icon: AdjustmentsHorizontalOutline,
+      icon: ArchiveOutline,
+      children: [
+        { href: '/inventory/stock-products', label: 'Stok Produk' },
+        { href: '/inventory/stock-adjustments', label: 'Adjustment Stok' },
+      ],
     },
     { type: 'link' as const, href: '/reports', label: 'Laporan', roles: ['OWNER'], icon: ChartPieOutline },
     { type: 'link' as const, href: '/settings', label: 'Settings', roles: ['OWNER'], icon: CogOutline },
@@ -41,11 +47,15 @@
 
   const visibleNavItems = $derived(navItems.filter((item) => item.roles.includes($authState.user?.role ?? '')));
 
-  const isMasterDataRoute = $derived(router.location?.startsWith('/master-data') ?? false);
-  let masterDataOpen = $state(false);
-  // Auto-expand accordion Master Data begitu URL aktif berada di dalamnya.
+  let openGroups = $state<Record<string, boolean>>({});
+  function isGroupRouteActive(basePath: string) {
+    return router.location?.startsWith(basePath) ?? false;
+  }
+  // Auto-expand accordion grup begitu URL aktif berada di dalamnya.
   $effect(() => {
-    if (isMasterDataRoute) masterDataOpen = true;
+    for (const item of navItems) {
+      if (item.type === 'group' && isGroupRouteActive(item.basePath)) openGroups[item.label] = true;
+    }
   });
 
   // Sidebar jadi off-canvas drawer di layar < md (tablet/mobile toko) supaya tidak
@@ -88,16 +98,16 @@
         {:else}
           <button
             type="button"
-            onclick={() => (masterDataOpen = !masterDataOpen)}
-            class="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition {isMasterDataRoute
+            onclick={() => (openGroups[item.label] = !openGroups[item.label])}
+            class="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition {isGroupRouteActive(item.basePath)
               ? 'bg-primary-50 text-primary-700'
               : 'text-slate-600 hover:bg-slate-100'}"
           >
             <item.icon class="h-4 w-4 shrink-0" />
             <span class="flex-1 text-left">{item.label}</span>
-            <ChevronDownOutline class="h-3.5 w-3.5 shrink-0 transition-transform {masterDataOpen ? 'rotate-180' : ''}" />
+            <ChevronDownOutline class="h-3.5 w-3.5 shrink-0 transition-transform {openGroups[item.label] ? 'rotate-180' : ''}" />
           </button>
-          {#if masterDataOpen}
+          {#if openGroups[item.label]}
             <div class="ml-3.5 flex flex-col gap-0.5 border-l border-slate-200 pl-3.5">
               {#each item.children as child (child.href)}
                 <a

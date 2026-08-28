@@ -13,6 +13,7 @@
   import PurchasingCreate from './routes/purchasing/PurchasingCreate.svelte';
   import PurchasingDetail from './routes/purchasing/PurchasingDetail.svelte';
   import PurchasingDocument from './routes/purchasing/PurchasingDocument.svelte';
+  import StockProducts from './routes/inventory/StockProducts.svelte';
   import AdjustmentList from './routes/inventory/AdjustmentList.svelte';
   import AdjustmentCreate from './routes/inventory/AdjustmentCreate.svelte';
   import Reports from './routes/Reports.svelte';
@@ -34,8 +35,9 @@
     '/purchasing/:id/edit': PurchasingCreate,
     '/purchasing/:id/document': PurchasingDocument,
     '/purchasing/:id': PurchasingDetail,
-    '/stock-adjustment': AdjustmentList,
-    '/inventory/adjustments/create': AdjustmentCreate,
+    '/inventory/stock-products': StockProducts,
+    '/inventory/stock-adjustments': AdjustmentList,
+    '/inventory/stock-adjustments/create': AdjustmentCreate,
     '/reports': Reports,
     '/settings': Settings,
     '/receipt/:id': ReceiptPrint,

@@ -16,6 +16,9 @@
     | 'PARTIALLY_RECEIVED'
     | 'RECEIVED'
     | 'COMPLETED'
+    | 'PEMBELIAN'
+    | 'PENJUALAN'
+    | 'ADJUSTMENT'
     | (string & {});
 
   let { status, class: className = '' }: { status: Status; class?: string } = $props();
@@ -38,6 +41,10 @@
     DEAD_STOCK: 'red',
     ROP_ALERT: 'amber',
     CANCELLED: 'secondary',
+    // Stock Ledger (MVP 3 Phase 3) — jenis transaksi kartu stok.
+    PEMBELIAN: 'green',
+    PENJUALAN: 'primary',
+    ADJUSTMENT: 'amber',
   };
 
   const color = $derived(colorByStatus[status] ?? 'gray');

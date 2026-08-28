@@ -24,7 +24,7 @@
     loading = true;
     errorMessage = '';
     try {
-      rows = await api.get<AdjustmentRow[]>('/stock-adjustments');
+      rows = await api.get<AdjustmentRow[]>('/inventory/stock-adjustments');
     } catch (err) {
       errorMessage = err instanceof ApiClientError ? err.message : 'Gagal memuat data adjustment';
     } finally {
@@ -38,7 +38,7 @@
     if (!confirm(`Posting "${row.adjustmentCode}"? Stok akan disesuaikan otomatis dan tidak bisa dibatalkan.`)) return;
     errorMessage = '';
     try {
-      await api.post(`/stock-adjustments/${row.id}/post`);
+      await api.post(`/inventory/stock-adjustments/${row.id}/post`);
       await loadRows();
     } catch (err) {
       errorMessage = err instanceof ApiClientError ? err.message : 'Gagal posting adjustment';
@@ -52,7 +52,7 @@
 
 <div class="mb-4 flex items-center justify-between">
   <h1 class="text-lg font-semibold text-slate-900">Adjustment Stok</h1>
-  <AppButton onclick={() => push('/inventory/adjustments/create')}>
+  <AppButton onclick={() => push('/inventory/stock-adjustments/create')}>
     <PlusOutline class="me-1.5 h-4 w-4" /> Buat Adjustment
   </AppButton>
 </div>
