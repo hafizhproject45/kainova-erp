@@ -1,0 +1,99 @@
+# DEVELOPMENT_ROADMAP_MVP_3.md - KaiNova ERP
+
+> **Legend status:** `[x]` Selesai & teruji · `[~]` Sebagian/berjalan tapi belum lengkap · `[ ]` Belum dikerjakan.
+> Update terakhir: 2026-08-28 — Spesifikasi MVP 3: Standardisasi Toggle is_active, Matrix Generator Varian, Alur 4-Step Procurement (PR to PO) dengan Stepper & Edit Kontekstual, Module Inventory & Stock Ledger, Expanded Reporting Sub-Modules, serta Enterprise System Settings.
+
+---
+
+## 💡 Fokus Utama MVP 3
+
+MVP 3 berfokus pada **Standardisasi Kontrol Keaktifan Data, Matrix Variant Engine, Procurement Enterprise Flow (PR to PO), Restrukturisasi Module Inventory & Stock Ledger, Dedicated Reporting Sub-Modules, & Enterprise System Administration**:
+
+* **Standardisasi Toggle `is_active` (8 Master Data):** Mengganti seluruh `Select Input` status aktif/non-aktif menjadi komponen **Toggle Switch** (Flowbite Svelte) yang mendukung *Inline Quick Toggle* pada tabel dan penerapaan *Strict Filtering* (`is_active = true`) di seluruh modul transaksi.
+* **Master Data Varian & Matrix Generator:** Sederhana penamaan sub-menu menjadi **Varian** (`/master-data/variants`) yang dilengkapi dengan fitur *Matrix Generator & Bulk Fill* untuk penetapan kombinasi SKU, harga dasar, dan stok secara instan.
+* **Procurement Enterprise Flow (PR to PO):** Menerapkan alur 4-step pengadaan barang secara lengkap: **1. Pengajuan (PR)** ➔ **2. Persetujuan & Penerbitan PO (oleh Owner)** ➔ **3. Penerimaan Barang (Goods Receipt)** ➔ **4. Selesai (Completed)**, dilengkapi dengan *Horizontal Stepper*, *Vertical Kebab Action Menu*, dan *Contextual Edit*.
+* **Restrukturisasi Modul Inventory:** Mengubah nama modul menjadi **Inventory** dengan 2 sub-module utama: **Stok Produk** (memuat *Current Stock Summary* dan *Stock Ledger / Kartu Stok*) serta **Adjustment Stok** (koreksi opname).
+* **Dedicated Reporting Sub-Modules:** Mengubah *dropdown select* laporan menjadi **Accordion Sub-Menu Sidebar** dengan 6 laporan esensial (Penjualan & Produk Terlaris, Pembelian per Supplier, Stok & Valuasi Inventaris, Adjustment Stok, Laba Rugi, dan Rekonsiliasi Pembayaran Kasir).
+* **Enterprise System Settings & Policy:** Menambahkan pengaturan profil perusahaan, kebijakan inventaris & metode costing HPP (FIFO / Moving Average), matriks hak akses (*Role & Permission Matrix*), kustomisasi struk POS, dan *Auto-Numbering Prefix* untuk seluruh dokumen transaksi.
+
+---
+
+## Phase 1: Global Toggle Standard, Matrix Variant Generator & Master Data Refinement
+
+Goal: Mengimplementasikan Toggle Switch `is_active` di seluruh 8 entity Master Data, memperbarui modul Varian dengan Matrix Generator, serta memastikan *Strict Filtering* berlaku pada modul transaksi.
+
+* [ ] **Standardisasi Component Toggle `is_active`:**
+  * [ ] Hapus seluruh komponen `AppSelect` (`Aktif` / `Non-Aktif`) pada form Add/Edit Master Data dan ganti dengan **Toggle Switch** berbasis Flowbite Svelte.
+  * [ ] Implementasikan *Inline Quick Toggle* pada kolom status di `<AppTable>` untuk 8 Master Data (*Kategori, Produk & SKU, Varian, Supplier, Customer, Pajak, Diskon, UOM*).
+  * [ ] Terapkan backend & frontend *Strict Filtering* (`WHERE is_active = true`) pada form POS, Pembelian, dan Adjustment Stok agar data non-aktif otomatis tersembunyikan dari transaksi baru.
+* [ ] **Module Varian & Matrix Generator Engine (`/master-data/variants`):**
+  * [ ] Penyesuaian nama sub-menu Sidebar dari "Master Varian" menjadi **Varian** dan URL route ke `/master-data/variants`.
+  * [ ] Fitur **Matrix Generator**: Opsi membuat kombinasi varian otomatis (misal: Ukuran `S, M, L` × Warna `Merah, Hitam`) menjadi entitas SKU terpisah secara massal.
+  * [ ] Fitur **Bulk Fill**: Form pengisian massal untuk harga beli, harga jual, dan stok awal pada seluruh SKU yang dihasilkan oleh Matrix Generator.
+
+---
+
+## Phase 2: Enterprise Procurement Module (PR to PO Flow) & Interactive UI
+
+Goal: Mengembangkan modul Pembelian tingkat *enterprise* dengan alur 4-step pengadaan (PR ➔ PO ➔ Penerimaan ➔ Selesai), *Stepper* visual, *Vertical Kebab Menu*, dan pencetakan dokumen PR/PO terpisah.
+
+* [ ] **Workflow Engine & Status Lifecycle Pembelian:**
+  * [ ] **Step 1: Pengajuan (PR / Purchase Requisition):** Staf/Kasir membuat pengajuan kebutuhan barang (Supplier, Produk/SKU, Qty) tanpa harga pasti ➔ Menghasilkan Dokumen **PR** (`DRAFT_PR`).
+  * [ ] **Step 2: Persetujuan & Penerbitan PO (Approval & PO Issuance):** Owner/Manager meninjau PR, memasukkan harga beli kesepakatan per item, dan menyetujui ➔ Menghasilkan Dokumen **PO Resmi** (`PO_ISSUED`).
+  * [ ] **Step 3: Penerimaan Barang (Goods Receipt):** Staf Gudang/Owner mencatat fisik barang masuk ➔ Memutakhirkan stok fisik dan kalkulasi HPP (FIFO/Average) ➔ Status (`PARTIALLY_RECEIVED` / `RECEIVED`).
+  * [ ] **Step 4: Selesai (Completed):** Seluruh barang diterima lengkap ➔ Transaksi dikunci secara permanen (`COMPLETED`).
+* [ ] **UI/UX Enhancement Modul Pembelian:**
+  * [ ] **Horizontal Stepper Component:** Indikator kemajuan step transaksi (*Pengajuan* ➔ *Penerbitan PO* ➔ *Penerimaan Barang* ➔ *Selesai*) di halaman/modal Detail Pembelian.
+  * [ ] **Vertical Kebab Action Menu (`EllipsisVertical`):** Dropdown pop-up pada tabel utama dengan ikon visual:
+    * 👁️ **Detail**: Membuka halaman/modal Detail Pembelian.
+    * 🗑️ **Hapus**: Membatalkan/menghapus record pengajuan atau PO.
+  * [ ] **Contextual Edit Actions:** Tombol **Edit Pengajuan** (aktif saat transaksi berada di Step PR) dan **Edit Penerimaan** (aktif saat transaksi berada di Step Penerimaan) di dalam modal Detail.
+  * [ ] **Item List Column Formatting:** Format penulisan ringkasan item terbeli pada satu kolom tabel: `- [Nama Produk/Varian] ([Qty] [UOM])`.
+  * [ ] **Document Viewer & Print Templates:** Tampilan terpisah dan cetak dokumen resmi untuk Dokumen PR dan Dokumen PO.
+
+---
+
+## Phase 3: Inventory Restructuring, Stock Ledger & Costing Engine
+
+Goal: Mengubah modul Adjustment Stok menjadi modul Inventory menyeluruh, menghadirkan Current Stock Summary, Stock Ledger historikal, serta kalkulasi costing HPP otomatis.
+
+* [ ] **Restructuring Sidebar Navigation:**
+  * [ ] Ubah nama modul utama Sidebar menjadi **Inventory** (`/inventory`).
+  * [ ] Buat 2 sub-module dedicated: **Stok Produk** (`/inventory/stock-products`) dan **Adjustment Stok** (`/inventory/stock-adjustments`).
+* [ ] **Sub-Module 1: Stok Produk & Stock Ledger (`/inventory/stock-products`):**
+  * [ ] **Current Stock Summary Panel:** Menampilkan daftar SKU aktif, kuantitas stok saat ini (*real-time Qty*), dan total nominal valuasi aset barang.
+  * [ ] **Stock Ledger Table (Kartu Stok Historikal):** Audit trail kronologis pergerakan barang memuat kolom Tanggal/Waktu, Nama SKU, Jenis Transaksi (*Penjualan, Pembelian, Adjustment, Retur*), Qty Masuk, Qty Keluar, Saldo Akhir Qty, HPP Unit, dan Total Nominal Valuasi.
+* [ ] **Sub-Module 2: Adjustment Stok (`/inventory/stock-adjustments`):**
+  * [ ] Form pencatatan penyesuaian stok opname (kerusakan, kehilangan, barang sampel) dengan verifikasi approval.
+  * [ ] Integrasi otomatis pencatatan adjustment ke dalam *Stock Ledger* saat transaksi di-post/disetujui.
+
+---
+
+## Phase 4: Dedicated Reporting Sub-Modules & System Administration (Settings)
+
+Goal: Mengubah modul Laporan menjadi Accordion Sub-Menu Sidebar dengan 6 laporan esensial, serta membangun modul Settings menyeluruh untuk pengelolaan bisnis, kebijakan inventaris, dan hak akses.
+
+* [ ] **Restrukturisasi Sidebar Sub-Module Laporan (`/reports/*`):**
+  * [ ] Mengubah *dropdown select* jenis laporan menjadi **Accordion Sub-Menu Sidebar**.
+  * [ ] 📊 **Laporan Penjualan & Produk Terlaris** (`/reports/sales`): Analytics omset, pergerakan barang (*fast-moving* vs *slow-moving*), dan margin produk.
+  * [ ] 🛍️ **Laporan Pembelian per Supplier** (`/reports/purchases`): Rekapitulasi volume pengadaan, tren harga, dan riwayat PO per supplier.
+  * [ ] 📦 **Laporan Stok & Valuasi Inventaris** (`/reports/inventory-valuation`): Valuasi aset barang (FIFO/Average) dan deteksi umur mengendap stok (*aging report*).
+  * [ ] ⚖️ **Laporan Adjustment Stok** (`/reports/stock-adjustments`): Audit trail kerugian dan penyesuaian opname.
+  * [ ] 💵 **Laporan Laba Rugi (Profit & Loss)** (`/reports/profit-and-loss`): Ringkasan finansial (`Revenue` - `HPP/COGS` - `Biaya Operasional` = `Net Profit`).
+  * [ ] 💳 **Laporan Rekonsiliasi Pembayaran** (`/reports/payment-reconciliation`): Rekapitulasi transaksi berdasarkan kanal bayar (Tunai, QRIS, Transfer) untuk *settlement* kasir harian.
+* [ ] **Modul Settings & System Administration (`/settings/*`):**
+  * [ ] **Company Profile Settings:** Identitas perusahaan, logo, alamat, NPWP, dan kontak untuk header dokumen & struk.
+  * [ ] **Inventory Policy Settings:** Opsi metode costing HPP (**FIFO** / **Moving Average**), toggle izin stok minus, dan *threshold* notifikasi stok minimum.
+  * [ ] **Role & Permission Matrix:** Pengaturan hak akses bertingkat (*Owner, Manager, Kasir, Gudang*) dengan kontrol granular per aksi modul (misal: Siapa yang boleh menyetujui PO atau melakukan Adjustment Stok).
+  * [ ] **Receipt & Auto-Numbering Templates:** Kustomisasi struk POS (Thermal 58mm/80mm) dan format prefix penomoran dokumen otomatis (`PR/{YYYY}/{MM}/XXX`, `PO/{YYYY}/{MM}/XXX`, `INV/{YYYY}/{MM}/XXX`).
+
+---
+
+## Definition of Done (DoD) - MVP 3
+
+1. [ ] **Global Toggle Standard:** Komponen input `Select` status aktif/non-aktif pada 8 Master Data sepenuhnya diganti menggunakan Toggle Switch, serta *Strict Filtering* (`is_active = true`) berjalan konsisten di seluruh modul transaksi.
+2. [ ] **Matrix Variant Engine:** Sub-menu **Varian** dilengkapi dengan Matrix Generator dan Bulk Fill yang mampu men-generate kombinasi SKU secara instan.
+3. [ ] **Complete Procurement Lifecycle:** Alur pengadaan barang 4-step (PR ➔ PO ➔ Penerimaan ➔ Selesai) terimplementasi penuh dengan *Horizontal Stepper*, *Vertical Kebab Menu*, *Contextual Edit*, serta dokumen PR & PO resmi yang dapat dicetak secara terpisah.
+4. [ ] **Inventory & Stock Ledger:** Modul Inventory memiliki sub-menu Stok Produk (dengan Current Stock Summary & Stock Ledger historikal) dan Adjustment Stok yang terintegrasi secara *real-time*.
+5. [ ] **Dedicated Reporting Navigation:** Modul Laporan memiliki 6 sub-module dedicated pada Sidebar Accordion dengan filter, tabel terformat, dan fungsi *autoload data*.
+6. [ ] **Enterprise System Settings:** Pengaturan profil bisnis, metode costing HPP (FIFO/Average), batasan stok minus, *Role & Permission Matrix*, serta *Auto-Numbering Prefix* dapat dikonfigurasi sepenuhnya oleh Owner.
