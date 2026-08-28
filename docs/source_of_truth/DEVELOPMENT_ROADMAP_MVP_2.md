@@ -22,24 +22,24 @@ MVP 2 berfokus pada **Transformasi Visual, Standarisasi Navigation/Routing, Form
 
 Goal: Mengintegrasikan Flowbite Svelte, membuat modul utilitas *formatting* ribuan/mata uang, mengatur skema warna Popyshop, merancang arsitektur routing (halaman terpisah Add/Edit), dan membuat *Standardized Table Component*.
 
-* [ ] **Setup & Config Flowbite Svelte:**
-  * [ ] Install `flowbite-svelte`, `flowbite`, dan package icon terkait (`flowbite-svelte-icons` / `lucide-svelte`).
-  * [ ] Konfigurasi `tailwind.config.cjs` untuk mendukung plugin Flowbite dan skema warna disesuaikan.
-* [ ] **Frontend Number & Currency Formatting Utilities (`src/lib/utils/formatters.ts`):**
-  * [ ] Function `formatRupiah(amount: number | string)` ➔ Mengubah angka menjadi format mata uang Rupiah konsisten (`Rp 150.000`).
-  * [ ] Function `formatNumber(value: number | string)` ➔ Mengubah angka biasa/qty menjadi format dengan delimiter ribuan (`1.500`).
-  * [ ] Helper input parser `parseNumber(formattedValue: string)` ➔ Mengubah string ber-delimiter kembali menjadi number murni saat dikirim ke backend.
-* [ ] **Design Tokens & Palette Customization:**
-  * [ ] **Primary Color:** Emerald / Deep Teal (identitas KaiNova ERP & kesan bersih/profesional).
-  * [ ] **Secondary Color:** Warm Rose / Coral (brand fashion Popyshop).
-  * [ ] **Tertiary Color:** Amber / Gold (penanda aksen, alert, status khusus, dan highlight).
-* [ ] **Base UI Component Library (Reusable Wrappers):**
-  * [ ] `<AppButton>`: Tombol Flowbite dengan varian `primary`, `secondary`, `outline`, `danger`, bawaan icon + indikator loading.
-  * [ ] `<AppInput>`: Wrapper input teks/angka Flowbite dengan prop `required` (menampilkan **bintang merah `*`** pada label), helper error text, serta integrasi pemformatan ribuan *on-the-fly* untuk input nominal.
-  * [ ] `<AppSelect>`: Dropdown Flowbite dengan penanda `required` (`*`) dan fitur pencarian.
-  * [ ] `<AppTable>`: Standardized Table Wrapper berbasis Flowbite `Table` yang mendukung *striped rows*, *hover effects*, *sticky header*, *pagination*, dan *action column*.
-  * [ ] `<AppBadge>`: Badge status konsisten (`POSTED`, `DRAFT`, `FAST_MOVING`, `DEAD_STOCK`) untuk diletakkan di dalam sel tabel.
-  * [ ] `<AppCard>`: Container card untuk form pembungkus di halaman dedicated Add/Edit.
+* [x] **Setup & Config Flowbite Svelte:**
+  * [x] Install `flowbite-svelte`, `flowbite`, dan package icon terkait (`flowbite-svelte-icons` / `lucide-svelte`).
+  * [x] Konfigurasi Tailwind v4 (`@source`, `@theme`) untuk mendukung plugin Flowbite dan skema warna disesuaikan (proyek ini pakai Tailwind v4 CSS-based config, bukan `tailwind.config.cjs`).
+* [x] **Frontend Number & Currency Formatting Utilities (`src/lib/utils/formatters.ts`):**
+  * [x] Function `formatRupiah(amount: number | string)` ➔ Mengubah angka menjadi format mata uang Rupiah konsisten (`Rp 150.000`).
+  * [x] Function `formatNumber(value: number | string)` ➔ Mengubah angka biasa/qty menjadi format dengan delimiter ribuan (`1.500`).
+  * [x] Helper input parser `parseNumber(formattedValue: string)` ➔ Mengubah string ber-delimiter kembali menjadi number murni saat dikirim ke backend.
+* [x] **Design Tokens & Palette Customization:**
+  * [x] **Primary Color:** Emerald / Deep Teal (identitas KaiNova ERP & kesan bersih/profesional).
+  * [x] **Secondary Color:** Warm Rose / Coral (brand fashion Popyshop).
+  * [x] **Tertiary Color:** Amber / Gold (penanda aksen, alert, status khusus, dan highlight).
+* [x] **Base UI Component Library (Reusable Wrappers):**
+  * [x] `<AppButton>`: Tombol Flowbite dengan varian `primary`, `secondary`, `outline`, `danger`, bawaan icon + indikator loading.
+  * [x] `<AppInput>`: Wrapper input teks/angka Flowbite dengan prop `required` (menampilkan **bintang merah `*`** pada label), helper error text, serta integrasi pemformatan ribuan *on-the-fly* untuk input nominal.
+  * [x] `<AppSelect>`: Dropdown Flowbite dengan penanda `required` (`*`) dan fitur pencarian.
+  * [x] `<AppTable>`: Standardized Table Wrapper berbasis Flowbite `Table` yang mendukung *striped rows*, *hover effects*, *sticky header*, *pagination*, dan *action column*.
+  * [x] `<AppBadge>`: Badge status konsisten (`POSTED`, `DRAFT`, `FAST_MOVING`, `DEAD_STOCK`) untuk diletakkan di dalam sel tabel.
+  * [x] `<AppCard>`: Container card untuk form pembungkus di halaman dedicated Add/Edit.
 
 ---
 
@@ -47,29 +47,22 @@ Goal: Mengintegrasikan Flowbite Svelte, membuat modul utilitas *formatting* ribu
 
 Goal: Menambahkan Master Data UOM, mengubah arsitektur Master Data menjadi Dedicated Page Routing (halaman List, Add, dan Edit terpisah) serta menyajikan seluruh Master Data dalam bentuk Data Table.
 
-* [ ] **Database & Backend Master Data UOM:**
-  * [ ] Tambah tabel `uoms` (`id`, `code`, `name`, `description`, `created_at`, `updated_at`, `deleted_at`).
-  * [ ] Relasikan `uom_id` pada tabel `products` / `product_variants`.
-  * [ ] Implementasi Endpoint CRUD UOM (`/master/uoms`).
-* [ ] **Navigation & Separate Page Routing:**
-  * [ ] Restrukturisasi route SvelteKit/Svelte Navigator untuk 7 Master Data:
-    * `GET /master/customers` (List Table) ➔ `GET /master/customers/create` (Add Page) ➔ `GET /master/customers/:id/edit` (Edit Page)
-    * `GET /master/suppliers` (List Table) ➔ `GET /master/suppliers/create` (Add Page) ➔ `GET /master/suppliers/:id/edit` (Edit Page)
-    * `GET /master/taxes` (List Table) ➔ `GET /master/taxes/create` (Add Page) ➔ `GET /master/taxes/:id/edit` (Edit Page)
-    * `GET /master/discounts` (List Table) ➔ `GET /master/discounts/create` (Add Page) ➔ `GET /master/discounts/:id/edit` (Edit Page)
-    * `GET /master/uoms` (List Table) ➔ `GET /master/uoms/create` (Add Page) ➔ `GET /master/uoms/:id/edit` (Edit Page)
-    * `GET /master/categories` (List Table) ➔ `GET /master/categories/create` (Add Page) ➔ `GET /master/categories/:id/edit` (Edit Page)
-    * `GET /master/products` (List Table) ➔ `GET /master/products/create` (Add Page) ➔ `GET /master/products/:id/edit` (Edit Page)
-* [ ] **Form Dedicated Page Standardization:**
-  * [ ] Membuat layout halaman form Add/Edit dedicated dengan tombol *Back/Kembali* ⬅️, header jelas, dan tombol *Save/Update* 💾.
-  * [ ] Form Produk (`/master/products/create` & edit) wajib memiliki **Dropdown Select UOM** dari Master Data UOM dengan penanda **bintang merah `*`**.
-  * [ ] Semua field input yang *required* pada form Add/Edit wajib diberi tanda **bintang merah `*`**.
-  * [ ] Penggunaan `formatNumber`/`formatRupiah` pada input harga modal/jual dan nilai diskon nominal.
-* [ ] **Master Data Full Table Implementation:**
-  * [ ] Semua tab Master Data disajikan penuh menggunakan `<AppTable>`.
-  * [ ] Seluruh kolom harga dan stok di dalam tabel wajib diformat menggunakan `formatRupiah` / `formatNumber` (rata kanan).
-  * [ ] Kolom Aksi Tabel dilengkapi Icon aksional: ✏️ (Redirect ke Halaman Edit) & 🗑️ (Trigger Modal Konfirmasi Soft-Delete).
-  * [ ] Integrasi *Search Bar* & *Filter Dropdown* visual di bagian atas header tabel.
+* [x] **Database & Backend Master Data UOM:**
+  * [x] Tambah tabel `uoms` (`id`, `code`, `name`, `description`, `created_at`, `updated_at`, `deleted_at`).
+  * [x] Relasikan `uom_id` pada tabel `products` (berlaku untuk seluruh varian SKU di bawah produk parent).
+  * [x] Implementasi Endpoint CRUD UOM — path aktual `/v1/uoms` (bukan `/master/uoms`), mengikuti konvensi endpoint master data lain yang sudah ada (`/v1/categories`, `/v1/suppliers`, dst — tidak ada prefix `/master`).
+* [x] **Navigation & Separate Page Routing:**
+  * [x] Routing dedicated List/Create/Edit untuk 7 Master Data via `svelte-spa-router` (bukan SvelteKit): `/master-data/:tab`, `/master-data/:tab/create`, `/master-data/:tab/:id/edit`. Ditenagai 2 komponen generik data-driven (`MasterDataList.svelte`, `MasterDataForm.svelte` + `masterDataConfig.ts`) alih-alih 21 file terpisah — URL & konsep List/Add/Edit tetap terpisah sesuai tujuan roadmap, kode tetap DRY.
+* [x] **Form Dedicated Page Standardization:**
+  * [x] Layout form Add/Edit dedicated dengan tombol *Back/Kembali* ⬅️, header jelas, dan tombol *Save/Update* 💾 (`AppCard` + `AppButton`).
+  * [x] Form Produk wajib memiliki **Dropdown Select UOM** (searchable) dari Master Data UOM dengan penanda **bintang merah `*`**.
+  * [x] Semua field input yang *required* pada form Add/Edit diberi tanda **bintang merah `*`** (`AppInput`/`AppSelect` prop `required`).
+  * [x] Penggunaan `formatNumber`/`formatRupiah` (via `AppInput numeric`) pada input harga dasar produk, rate pajak, dan nilai diskon.
+* [x] **Master Data Full Table Implementation:**
+  * [x] Semua tab Master Data (termasuk UOM) disajikan penuh menggunakan `<AppTable>` (striped, hover, sticky header, pagination bawaan).
+  * [x] Kolom harga & stok di tabel diformat `formatRupiah`/`formatNumber` rata kanan (varian SKU produk).
+  * [x] Kolom Aksi Tabel dilengkapi icon ✏️ (redirect ke Edit) & 🗑️ (hapus) — konfirmasi masih pakai `window.confirm()` native, belum modal Flowbite dedicated; cukup untuk MVP tapi bisa di-upgrade nanti.
+  * [x] Search bar di header tabel semua tab + filter dropdown Kategori khusus tab Produk.
 
 ---
 
@@ -77,19 +70,19 @@ Goal: Menambahkan Master Data UOM, mengubah arsitektur Master Data menjadi Dedic
 
 Goal: Menerapkan skema Data Tabel dan pemformatan angka di modul Pembelian, Adjustment Stok, dan Penjualan, serta memoles antarmuka POS Kasir.
 
-* [ ] **Table Standardization Across All Modules:**
-  * [ ] **Modul Pembelian:** Tabel Daftar Purchase Order (PO Number, Supplier, Total Amount [Rp], Status Badge, Aksi Detail/Receive).
-  * [ ] **Modul Adjustment Stok:** Tabel Daftar Stock Opname & Saldo Awal (Adjustment Code, Reason, Total Items, Status DRAFT/POSTED, Aksi Detail/Post).
-  * [ ] **Modul Penjualan:** Tabel Riwayat Transaksi Penjualan / Sales Orders (Invoice No, Customer, Payment Method, DPP [Rp], PPN [Rp], PPh [Rp], Grand Total [Rp], Aksi Print Struk).
-* [ ] **POS / Kasir Interactive Redesign:**
-  * [ ] Visual Card Grid untuk item produk + Tabel Ringkasan Keranjang Belanja (*Cart Table*) di panel kanan (Harga & Subtotal diformat `formatRupiah`, mencantumkan Satuan UOM).
-  * [ ] Dropdown Customer, Diskon, & Pajak (PPN/PPh) berbasis Flowbite `Select` dengan ikon penanda & bintang merah `*`.
-  * [ ] Display kalkulasi real-time Subtotal, Potongan Diskon, DPP, PPN, PPh, dan Grand Total ber-delimiter ribuan yang jelas.
-  * [ ] Fitur Scan Barcode (UI Focus input handler).
-  * [ ] Modal Preview Struk Pembayaran siap print (`window.print()`).
-* [ ] **Separate Pages for Transaction Forms:**
-  * [ ] Pembuatan PO berada di halaman dedicated: `/purchasing/create`.
-  * [ ] Pembuatan Stock Adjustment berada di halaman dedicated: `/inventory/adjustments/create`.
+* [x] **Table Standardization Across All Modules:**
+  * [x] **Modul Pembelian:** Tabel Daftar Purchase Order (No. PO — sintetis dari id karena tidak ada kolom sequence khusus, Supplier, Total [Rp], Status Badge, Aksi Terima Barang). Aksi "Detail" belum ada (belum ada endpoint `GET /purchase-orders/:id`).
+  * [x] **Modul Adjustment Stok:** Tabel Daftar Stock Opname & Saldo Awal (Kode — sintetis dari id, Alasan, Total Item, Status DRAFT/POSTED badge, Aksi Post). Aksi "Detail" belum ada (belum ada endpoint `GET /stock-adjustments/:id`).
+  * [x] **Modul Penjualan:** Tabel Riwayat Transaksi Penjualan / Sales Orders (Invoice No, Customer, Payment Method, DPP [Rp], PPN [Rp], PPh [Rp], Grand Total [Rp], Aksi Print Struk) di halaman baru `/pos/history`, diakses via tombol "Riwayat Transaksi" di header POS.
+* [x] **POS / Kasir Interactive Redesign:**
+  * [x] Visual Card Grid untuk item produk (klik card → chip SKU per varian) + Tabel Ringkasan Keranjang Belanja di panel kanan dengan qty stepper (Harga & Subtotal diformat `formatRupiah`, mencantumkan Satuan UOM per baris).
+  * [x] Dropdown Customer, Diskon, & Pajak (PPN/PPh) berbasis `AppSelect`. Tidak ada field wajib di panel ini (semua opsional saat checkout), jadi tidak ada bintang merah `*` — sesuai aturan `AppSelect`/`AppInput` (bintang hanya muncul kalau `required`).
+  * [x] Display kalkulasi real-time Subtotal, Diskon, DPP, PPN, PPh, dan Grand Total ber-delimiter ribuan (dihitung ulang & divalidasi lagi oleh backend saat checkout).
+  * [x] Fitur Scan Barcode (input focus handler, dari MVP 1) — sudah di-restyle dengan ikon barcode.
+  * [x] Modal Preview Struk Pembayaran (Flowbite `Modal`) muncul setelah checkout sukses, tombol "Cetak Struk" membuka `/receipt/:id` (halaman print-ready `window.print()` yang sudah ada) di tab baru — bukan `window.print()` langsung di dalam modal.
+* [x] **Separate Pages for Transaction Forms:**
+  * [x] Pembuatan PO berada di halaman dedicated: `/purchasing/create`.
+  * [x] Pembuatan Stock Adjustment berada di halaman dedicated: `/inventory/adjustments/create`.
 
 ---
 
@@ -97,28 +90,28 @@ Goal: Menerapkan skema Data Tabel dan pemformatan angka di modul Pembelian, Adju
 
 Goal: Mengubah Dashboard menjadi kaya visualisasi grafik dan angka terformat, serta memastikan seluruh Laporan otomatis memuat data saat pertama kali dibuka dan dapat difilter/diexport secara interaktif.
 
-* [ ] **Executive Dashboard Enhancements:**
-  * [ ] Visualisasi Chart Tren Omset & Laba Kotor Harian/Bulanan dengan tooltip angka terformat `formatRupiah`.
-  * [ ] Widget KPI Card (Omset Hari Ini, Laba Kotor, Total Transaksi) menggunakan font besar ber-delimiter ribuan (`Rp 12.500.000`).
-  * [ ] **Tabel ROP Alert & Top 5 Selling Products:** Seluruh angka Qty dan Nominal diformat rapi dengan `formatNumber` / `formatRupiah`.
-* [ ] **Reporting Tables & Autoload Data Implementation:**
-  * [ ] **Autoload Data on Mounting:** Memasang pemanggilan API data laporan secara otomatis pada siklus *lifecycle* `onMount()` / Svelte `load()` function menggunakan tanggal *default* (misal: `startDate` = 1 bulan yang lalu s/d `endDate` = hari ini). Data langsung dirender ke tabel tanpa harus menekan tombol *Search*.
-  * [ ] Seluruh halaman Laporan (Penjualan, Pembelian, Stok, Adjustment, Laba Rugi) disajikan dalam format **Flowbite Data Table** ber-delimiter ribuan dengan alignment *numeric right-aligned*.
-  * [ ] Header filter laporan disesuaikan (Datepicker Flowbite + Dropdown Filter) di mana tombol *Apply/Filter* digunakan untuk memperbarui data yang *sudah tampil*.
-  * [ ] Penandaan field filter wajib dengan bintang merah `*`.
-  * [ ] Layout *Print-Friendly View* (`@media print`) yang menyembunyikan navigasi sidebar/navbar.
-  * [ ] Tombol Export PDF & Excel dengan icon menarik dan indikator *loading/downloading*.
+* [x] **Executive Dashboard Enhancements:**
+  * [x] Visualisasi Chart Tren Omset dengan tooltip angka terformat `formatRupiah` — versi Harian (7 hari terakhir), belum ada toggle agregasi Bulanan (di luar scope data yang tersedia saat ini, bisa ditambah kalau dibutuhkan).
+  * [x] Widget KPI Card (Omset Hari Ini, Laba Kotor, Total Transaksi) menggunakan font besar ber-delimiter ribuan (`Rp 12.500.000`) via `formatRupiah`/`formatNumber` terpusat.
+  * [x] **Tabel ROP Alert & Top 5 Selling Products:** keduanya pakai `<AppTable>`, Qty & nominal diformat `formatNumber`/`formatRupiah`. Top 5 Selling Products baru ditambahkan (backend `GET /dashboard/summary` field `topSellingProducts`, lookback 30 hari).
+* [x] **Reporting Tables & Autoload Data Implementation:**
+  * [x] **Autoload Data on Mounting:** `onMount()` di `Reports.svelte` langsung memanggil laporan dengan `from` = 30 hari lalu, `to` = hari ini — data tampil tanpa klik tombol.
+  * [x] Seluruh halaman Laporan (Penjualan, Pembelian, Stok, Adjustment, Laba Rugi) disajikan dalam `<AppTable>` ber-delimiter ribuan dengan alignment numeric right-aligned + baris Total di bawah (kolom nominal vs qty dibedakan lewat daftar key eksplisit, karena JSON API tidak membawa metadata tipe kolom).
+  * [x] Header filter laporan pakai `AppSelect` (jenis laporan) + date picker; tombol *Tampilkan* dipakai untuk memperbarui data yang sudah tampil (bukan auto-refresh saat filter berubah).
+  * [x] Field filter wajib (Jenis Laporan, Dari/Sampai Tanggal) diberi tanda bintang merah `*`.
+  * [x] Layout Print-Friendly (`@media print`) menyembunyikan sidebar/navbar — sudah ada dari MVP 1 di `Layout.svelte` (`print:hidden`), diperkuat lagi di `Reports.svelte`.
+  * [x] Tombol Export PDF & Excel dengan icon (`FilePdfOutline`/`FileExportOutline`) dan indikator loading (`AppButton loading`).
 
 ---
 
 ## Definition of Done (DoD) - MVP 2
 
-1. [ ] **Master Data UOM Integration:** Master Data UOM (Unit of Measure) tersedia penuh dan terintegrasi secara wajib (required `*`) pada form pembuatan/pengeditan Produk.
-2. [ ] **Autoload Report Data:** Saat user membuka halaman Laporan (Penjualan, Pembelian, Stok, Adjustment, Laba Rugi), data tabel **otomatis langsung muncul** menggunakan filter *range default* tanpa perlu menekan tombol *Search* terlebih dahulu.
-3. [ ] **Consistent Number Formatting:** Seluruh angka nominal uang (Harga, HPP, DPP, PPN, PPh, Subtotal, Grand Total) disajikan dengan format mata uang Rupiah (`Rp 100.000`), dan seluruh angka kuantitas/stok disajikan dengan delimiter ribuan (`1.000`) di seluruh komponen UI, tabel, form, dan dashboard.
-4. [ ] **Dedicated Add & Edit Pages:** Proses Tambah dan Edit data 7 Master Data (Customer, Supplier, Pajak, Diskon, UOM, Kategori, Produk) dilakukan di **halaman terpisah (route khusus)**, bukan di modal/inline form pada halaman list.
-5. [ ] **Full Table Layout:** Semua penyajian daftar/list data di **seluruh 7 modul** (Master Data, POS History, PO, Stock Adjustment, Laporan, Dashboard Alerts) menggunakan komponen **Data Table Flowbite** yang rapi.
-6. [ ] **Required Field Indicator:** Seluruh *input field* yang wajib diisi pada form Add/Edit otomatis menampilkan tanda **bintang merah `*`** pada labelnya.
-7. [ ] **Rich Iconography:** Penggunaan Icon (Lucide/Flowbite Icons) diterapkan secara konsisten pada Navigasi Sidebar, Action Table Buttons (Edit ✏️, Delete 🗑️, View 👁️), Form Navigation (Back ⬅️, Save 💾), dan Dashboard Widgets.
-8. [ ] **Color Palette Integration:** Skema warna Primary (Emerald/Teal), Secondary (Rose/Coral), dan Tertiary (Amber/Gold) terintegrasi dengan harmonis di seluruh UI.
-9. [ ] **Responsive & Dynamic Dashboard:** Dashboard dilengkapi dengan Grafik (Chart) serta layout yang responsif saat diakses dari **Tablet Kasir POS** maupun **Mobile Browser**.
+1. [x] **Master Data UOM Integration:** Master Data UOM (Unit of Measure) tersedia penuh dan terintegrasi secara wajib (required `*`) pada form pembuatan/pengeditan Produk.
+2. [x] **Autoload Report Data:** Saat user membuka halaman Laporan (Penjualan, Pembelian, Stok, Adjustment, Laba Rugi), data tabel **otomatis langsung muncul** menggunakan filter *range default* (30 hari terakhir) tanpa perlu menekan tombol *Search* terlebih dahulu.
+3. [x] **Consistent Number Formatting:** Seluruh angka nominal uang (Harga, HPP, DPP, PPN, PPh, Subtotal, Grand Total) disajikan dengan format mata uang Rupiah (`Rp 100.000`), dan seluruh angka kuantitas/stok disajikan dengan delimiter ribuan (`1.000`) di seluruh komponen UI, tabel, form, dan dashboard — via `formatRupiah`/`formatNumber` terpusat & `<AppTable>`/`<AppInput numeric>`.
+4. [x] **Dedicated Add & Edit Pages:** Proses Tambah dan Edit data 7 Master Data (Customer, Supplier, Pajak, Diskon, UOM, Kategori, Produk) dilakukan di **halaman terpisah (route khusus)**, bukan di modal/inline form pada halaman list.
+5. [x] **Full Table Layout:** Semua penyajian daftar/list data di seluruh modul (Master Data, POS History, PO, Stock Adjustment, Laporan, Dashboard Alerts/Top 5) menggunakan `<AppTable>` yang konsisten.
+6. [x] **Required Field Indicator:** Seluruh *input field* yang wajib diisi pada form Add/Edit & filter Laporan otomatis menampilkan tanda **bintang merah `*`** pada labelnya (`AppInput`/`AppSelect` prop `required`).
+7. [x] **Rich Iconography:** Icon Flowbite diterapkan di Navigasi Sidebar (baru ditambahkan Phase 4), Action Table Buttons (Edit/Delete/Print), Form Navigation (Back/Save), dan Dashboard/POS Widgets.
+8. [x] **Color Palette Integration:** Primary (Emerald) dominan & konsisten di seluruh UI (tombol, badge sukses, active nav, chart). Secondary (Rose) dipakai di badge status `CANCELLED` & varian `AppButton`. Tertiary (Amber/Gold) dipakai konkret di badge alert/highlight (`ROP_ALERT`, `PENDING` — `AppBadge` pakai color Flowbite `amber` yang sama persis dengan skala warna token Tertiary kita).
+9. [x] **Responsive & Dynamic Dashboard:** Dashboard & POS diverifikasi manual di 3 breakpoint: mobile 375px (sidebar jadi off-canvas hamburger, card grid 2 kolom, tidak ada overflow horizontal), tablet portrait 768px (POS stack 1 kolom — dicoba 2 kolom lebih dulu tapi field Keranjang jadi terlalu sempit, jadi tetap `lg:` breakpoint), tablet landscape 1024px (POS split 2 kolom lega, cocok untuk Tablet Kasir POS sungguhan).

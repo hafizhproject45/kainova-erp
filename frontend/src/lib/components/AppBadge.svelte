@@ -1,0 +1,29 @@
+<script lang="ts">
+  import { Badge } from 'flowbite-svelte';
+
+  // Status yang dipakai lintas modul: Adjustment/PO/Sales (POSTED/DRAFT), Stock Alert (FAST_MOVING/DEAD_STOCK/ROP).
+  type Status = 'POSTED' | 'DRAFT' | 'FAST_MOVING' | 'DEAD_STOCK' | 'ROP_ALERT' | 'PAID' | 'CANCELLED' | (string & {});
+
+  let { status, class: className = '' }: { status: Status; class?: string } = $props();
+
+  // 'amber' dipakai (bukan 'yellow' bawaan Flowbite) supaya badge alert/highlight
+  // konsisten dengan token Tertiary KaiNova (Amber/Gold) — lihat app.css @theme.
+  const colorByStatus: Record<string, 'green' | 'gray' | 'primary' | 'red' | 'amber' | 'secondary'> = {
+    POSTED: 'green',
+    PAID: 'green',
+    RECEIVED: 'green',
+    Aktif: 'green',
+    DRAFT: 'gray',
+    PENDING: 'amber',
+    Nonaktif: 'gray',
+    FAST_MOVING: 'primary',
+    DEAD_STOCK: 'red',
+    ROP_ALERT: 'amber',
+    CANCELLED: 'secondary',
+  };
+
+  const color = $derived(colorByStatus[status] ?? 'gray');
+  const label = $derived(status.replace(/_/g, ' '));
+</script>
+
+<Badge {color} class="whitespace-nowrap font-medium {className}">{label}</Badge>

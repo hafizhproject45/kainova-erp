@@ -62,12 +62,15 @@ Semua endpoint master data di bawah mendukung Role `OWNER` untuk create/update/d
 {
   "name": "Hijab Voal Square Popyshop",
   "category_id": "uuid-category-kerudung",
+  "uom_id": "uuid-uom-pcs",
   "material": "Voal Premium",
   "colors": ["Black", "Navy", "Maroon"],
   "sizes": ["OS"],
   "base_price": 49000
 }
 ```
+
+* `uom_id` opsional di level API (kolom `products.uom_id` nullable), tapi **wajib diisi di form Add/Edit Produk** pada frontend (lihat MVP 2 — dropdown UOM ber-bintang merah).
 
 * Response (201 Created): Mengembalikan list SKU yang berhasil dibuat otomatis.
 
@@ -100,6 +103,13 @@ Semua endpoint master data di bawah mendukung Role `OWNER` untuk create/update/d
 * `POST /discounts` — `{ "name": "Diskon Member", "type": "PERCENTAGE", "value": 10, "valid_from": "2026-01-01", "valid_until": null }`
 * `PUT /discounts/:id` / `DELETE /discounts/:id`
 
+### 2.7 UOM (Unit of Measure) — ditambahkan MVP 2
+
+* `GET /uoms` — list UOM (`id`, `code`, `name`, `description`).
+* `POST /uoms` — `{ "code": "PCS", "name": "Pieces", "description": "Satuan per buah" }`
+* `PUT /uoms/:id` / `DELETE /uoms/:id` (soft delete via `deleted_at`).
+* Dipakai sebagai `uom_id` pada `products` (lihat §2.2) — satu UOM berlaku untuk seluruh varian SKU di bawah produk parent.
+
 ---
 
 ## 3. Pembelian (Purchasing)
@@ -128,6 +138,7 @@ Semua endpoint master data di bawah mendukung Role `OWNER` untuk create/update/d
 ### GET `/purchase-orders`
 
 * Query: `?supplier_id=&status=&from=&to=`
+* Response (MVP 2): tiap row diperkaya untuk kebutuhan tabel List — `po_number` (sintetis dari 8 karakter pertama `id`, format `PO-XXXXXXXX`, bukan kolom sequence terpisah di DB), `supplier_name` (hasil join), dan `total_amount` (agregat `qty * unit_cost` seluruh item PO tersebut).
 
 ---
 
@@ -160,10 +171,17 @@ Semua endpoint master data di bawah mendukung Role `OWNER` untuk create/update/d
 ### GET `/stock-adjustments`
 
 * Query: `?type=&status=&from=&to=`
+* Response (MVP 2): tiap row diperkaya `adjustment_code` (sintetis dari 8 karakter pertama `id`, format `ADJ-XXXXXXXX`) dan `total_items` (jumlah baris item adjustment tersebut).
 
 ---
 
 ## 5. Sales & POS Transaction
+
+### GET `/sales/orders` — ditambahkan MVP 2
+
+* Headers: Authorization: Bearer `<token>` (Role: OWNER, KASIR)
+* Query: `?from=&to=&payment_method=`
+* Response: riwayat transaksi penjualan untuk tabel "Riwayat Transaksi" (`/pos/history` di frontend) — tiap row berisi `invoice_number`, `customer_id`, `customer_name` (hasil join, `null` untuk walk-in), `payment_method`, `dpp`, `ppn_amount`, `pph_amount`, `grand_total`, `created_at`. Diurutkan terbaru dulu.
 
 ### GET `/sales/checkout-options`
 
@@ -257,10 +275,20 @@ Semua endpoint master data di bawah mendukung Role `OWNER` untuk create/update/d
     "gross_profit_today": 1200000,
     "low_stock_alerts": [
       { "sku": "GMS-SLK-BLK-L", "total_stock": 3, "rop": 8 }
+    ],
+    "revenue_trend": [
+      { "date": "2026-08-21", "revenue": 0 },
+      { "date": "2026-08-27", "revenue": 4500000 }
+    ],
+    "top_selling_products": [
+      { "sku": "20DA-BLA-OS", "product_name": "Hijab Voal Square", "qty_sold": 14 }
     ]
   }
 }
 ```
+
+* `revenue_trend`: omset per hari untuk 7 hari terakhir (termasuk hari ini), dipakai chart Dashboard.
+* `top_selling_products` (MVP 2): top 5 SKU terlaris berdasar qty, lookback 30 hari — basis kalkulasi sama dengan `low_stock_alerts[].rop`.
 
 ---
 

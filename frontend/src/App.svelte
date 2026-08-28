@@ -4,10 +4,14 @@
   import Layout from './lib/Layout.svelte';
   import Login from './routes/Login.svelte';
   import Dashboard from './routes/Dashboard.svelte';
-  import MasterData from './routes/MasterData.svelte';
+  import MasterDataList from './routes/master-data/MasterDataList.svelte';
+  import MasterDataForm from './routes/master-data/MasterDataForm.svelte';
   import Pos from './routes/Pos.svelte';
-  import Purchasing from './routes/Purchasing.svelte';
-  import StockAdjustment from './routes/StockAdjustment.svelte';
+  import SalesHistory from './routes/SalesHistory.svelte';
+  import PurchasingList from './routes/purchasing/PurchasingList.svelte';
+  import PurchasingCreate from './routes/purchasing/PurchasingCreate.svelte';
+  import AdjustmentList from './routes/inventory/AdjustmentList.svelte';
+  import AdjustmentCreate from './routes/inventory/AdjustmentCreate.svelte';
   import Reports from './routes/Reports.svelte';
   import Settings from './routes/Settings.svelte';
   import ReceiptPrint from './routes/ReceiptPrint.svelte';
@@ -15,11 +19,16 @@
 
   const routes = {
     '/': Dashboard,
-    '/master-data': MasterData,
-    '/master-data/:tab': MasterData,
+    '/master-data': MasterDataList,
+    '/master-data/:tab': MasterDataList,
+    '/master-data/:tab/create': MasterDataForm,
+    '/master-data/:tab/:id/edit': MasterDataForm,
     '/pos': Pos,
-    '/purchasing': Purchasing,
-    '/stock-adjustment': StockAdjustment,
+    '/pos/history': SalesHistory,
+    '/purchasing': PurchasingList,
+    '/purchasing/create': PurchasingCreate,
+    '/stock-adjustment': AdjustmentList,
+    '/inventory/adjustments/create': AdjustmentCreate,
     '/reports': Reports,
     '/settings': Settings,
     '/receipt/:id': ReceiptPrint,

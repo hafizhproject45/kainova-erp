@@ -1,17 +1,26 @@
 <script lang="ts">
   import { link, router } from 'svelte-spa-router';
+  import {
+    AdjustmentsHorizontalOutline,
+    ChartPieOutline,
+    CogOutline,
+    GridOutline,
+    ShoppingBagOutline,
+    TableColumnOutline,
+    TruckOutline,
+  } from 'flowbite-svelte-icons';
   import { authState, logout } from './stores/auth';
 
   let { children } = $props();
 
   const navItems = [
-    { href: '/', label: 'Dashboard', roles: ['OWNER'] },
-    { href: '/master-data', label: 'Master Data', roles: ['OWNER'] },
-    { href: '/pos', label: 'Penjualan (POS)', roles: ['OWNER', 'KASIR'] },
-    { href: '/purchasing', label: 'Pembelian', roles: ['OWNER', 'GUDANG'] },
-    { href: '/stock-adjustment', label: 'Adjustment Stok', roles: ['OWNER', 'GUDANG'] },
-    { href: '/reports', label: 'Laporan', roles: ['OWNER'] },
-    { href: '/settings', label: 'Settings', roles: ['OWNER'] },
+    { href: '/', label: 'Dashboard', roles: ['OWNER'], icon: GridOutline },
+    { href: '/master-data', label: 'Master Data', roles: ['OWNER'], icon: TableColumnOutline },
+    { href: '/pos', label: 'Penjualan (POS)', roles: ['OWNER', 'KASIR'], icon: ShoppingBagOutline },
+    { href: '/purchasing', label: 'Pembelian', roles: ['OWNER', 'GUDANG'], icon: TruckOutline },
+    { href: '/stock-adjustment', label: 'Adjustment Stok', roles: ['OWNER', 'GUDANG'], icon: AdjustmentsHorizontalOutline },
+    { href: '/reports', label: 'Laporan', roles: ['OWNER'], icon: ChartPieOutline },
+    { href: '/settings', label: 'Settings', roles: ['OWNER'], icon: CogOutline },
   ];
 
   const visibleNavItems = $derived(navItems.filter((item) => item.roles.includes($authState.user?.role ?? '')));
@@ -45,10 +54,11 @@
           href={item.href}
           use:link
           onclick={() => (mobileMenuOpen = false)}
-          class="rounded-lg px-3 py-2 text-sm font-medium transition {router.location === item.href
-            ? 'bg-indigo-50 text-indigo-700'
+          class="flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition {router.location === item.href
+            ? 'bg-primary-50 text-primary-700'
             : 'text-slate-600 hover:bg-slate-100'}"
         >
+          <item.icon class="h-4 w-4 shrink-0" />
           {item.label}
         </a>
       {/each}

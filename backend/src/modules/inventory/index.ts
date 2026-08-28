@@ -1,5 +1,5 @@
 import { Elysia, t } from 'elysia';
-import { and, asc, eq, gt, gte, lte, sql } from 'drizzle-orm';
+import { and, asc, eq, gt, gte, inArray, lte, sql } from 'drizzle-orm';
 import { db } from '../../config/database';
 import { inventoryBatches, productVariants, stockAdjustmentItems, stockAdjustments } from '../../db/schema';
 import { authPlugin, type AuthPayload } from '../auth';
@@ -16,11 +16,30 @@ export const inventoryRoutes = new Elysia({ prefix: '/stock-adjustments' })
         query.from ? gte(stockAdjustments.createdAt, new Date(query.from)) : undefined,
         query.to ? lte(stockAdjustments.createdAt, new Date(query.to)) : undefined,
       ].filter(Boolean);
+      const rows = await db
+        .select()
+        .from(stockAdjustments)
+        .where(conditions.length ? and(...conditions) : undefined);
+      if (rows.length === 0) return ok([]);
+
+      // Perkaya untuk tabel List (Adjustment Code, Total Items) — dihitung di app level,
+      // konsisten dengan pola yang sama di modul Pembelian.
+      const adjustmentIds = rows.map((r) => r.id);
+      const itemRows = await db
+        .select({ adjustmentId: stockAdjustmentItems.adjustmentId })
+        .from(stockAdjustmentItems)
+        .where(inArray(stockAdjustmentItems.adjustmentId, adjustmentIds));
+      const countByAdjustment = new Map<string, number>();
+      for (const item of itemRows) {
+        countByAdjustment.set(item.adjustmentId, (countByAdjustment.get(item.adjustmentId) ?? 0) + 1);
+      }
+
       return ok(
-        await db
-          .select()
-          .from(stockAdjustments)
-          .where(conditions.length ? and(...conditions) : undefined),
+        rows.map((r) => ({
+          ...r,
+          adjustmentCode: `ADJ-${r.id.slice(0, 8).toUpperCase()}`,
+          totalItems: countByAdjustment.get(r.id) ?? 0,
+        })),
       );
     },
     {

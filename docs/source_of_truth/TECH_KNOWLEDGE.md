@@ -2,7 +2,7 @@
 
 ## 1. Tech Stack Overview
 
-* **Frontend:** Svelte (SPA / Web Responsive)
+* **Frontend:** Svelte 5 (SPA / Web Responsive), UI komponen `flowbite-svelte` + `flowbite-svelte-icons`, styling Tailwind CSS v4
 * **Backend Runtime:** Bun
 * **Web Framework:** ElysiaJS
 * **ORM:** Drizzle ORM
@@ -35,7 +35,7 @@ backend/
 │   │   └── seed.ts         # Seed data awal (user OWNER + default settings)
 │   ├── modules/
 │   │   ├── auth/               # JWT & RBAC Middleware
-│   │   ├── master-data/        # Customer, Supplier, Tax, Discount, Category
+│   │   ├── master-data/        # Customer, Supplier, Tax, Discount, Category, UOM
 │   │   ├── products/           # Parent Product, Variants, & SKU Matrix
 │   │   ├── purchasing/         # Purchase Order & Goods Receipt
 │   │   ├── inventory/          # Inventory Batches, Stock Adjustment, FIFO/Average Logics
@@ -57,11 +57,20 @@ Struktur `frontend/` (SPA Svelte, mengonsumsi REST API `backend/` lewat proxy `/
 frontend/
 ├── src/
 │   ├── lib/
-│   │   ├── api.ts          # HTTP client + konversi camelCase<->snake_case
-│   │   ├── stores/auth.ts  # State login (token & user), persist ke localStorage
-│   │   └── Layout.svelte   # Sidebar navigasi & topbar
-│   ├── routes/             # 1 file per modul (Dashboard, MasterData, Pos,
-│   │                       # Purchasing, StockAdjustment, Reports, Settings, Login)
+│   │   ├── api.ts              # HTTP client + konversi camelCase<->snake_case
+│   │   ├── stores/auth.ts      # State login (token & user), persist ke localStorage
+│   │   ├── Layout.svelte       # Sidebar navigasi (dengan icon) & topbar
+│   │   ├── masterDataConfig.ts # Tab/kolom/endpoint 7 Master Data (dipakai List & Form)
+│   │   ├── utils/formatters.ts # formatRupiah/formatNumber/parseNumber terpusat
+│   │   └── components/         # Base UI library: AppButton, AppInput, AppSelect
+│   │                           # (search-select combobox), AppTable, AppBadge, AppCard
+│   ├── routes/
+│   │   ├── Dashboard.svelte, Pos.svelte, SalesHistory.svelte, Reports.svelte,
+│   │   │   Settings.svelte, Login.svelte, ReceiptPrint.svelte, NotFound.svelte
+│   │   ├── master-data/    # MasterDataList.svelte + MasterDataForm.svelte
+│   │   │                   # (dedicated List/Create/Edit untuk 7 Master Data via route param)
+│   │   ├── purchasing/     # PurchasingList.svelte + PurchasingCreate.svelte
+│   │   └── inventory/      # AdjustmentList.svelte + AdjustmentCreate.svelte
 │   ├── App.svelte          # Router (svelte-spa-router) + auth guard
 │   └── main.ts             # Entrypoint
 ├── vite.config.ts

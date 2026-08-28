@@ -1,7 +1,7 @@
 import { Elysia, t } from 'elysia';
 import { eq, isNull } from 'drizzle-orm';
 import { db } from '../../config/database';
-import { categories, customers, discounts, suppliers, taxes } from '../../db/schema';
+import { categories, customers, discounts, suppliers, taxes, uoms } from '../../db/schema';
 import { authPlugin } from '../auth';
 import { ok, toCamelCase } from '../../utils/http';
 
@@ -265,9 +265,51 @@ const discountsRoutes = new Elysia({ prefix: '/discounts' })
     { requireRole: ['OWNER'] },
   );
 
+// ---------------------------------------------------------------------------
+// UOM (Unit of Measure)
+// ---------------------------------------------------------------------------
+
+const uomsRoutes = new Elysia({ prefix: '/uoms' })
+  .use(authPlugin)
+  .get('', async () => ok(await db.select().from(uoms).where(isNull(uoms.deletedAt))), {
+    requireRole: ['OWNER', 'GUDANG', 'KASIR'],
+  })
+  .post(
+    '',
+    async ({ body }) => {
+      const [row] = await db.insert(uoms).values(toCamelCase(body)).returning();
+      return ok(row, 'UOM berhasil dibuat');
+    },
+    { body: t.Object({ code: t.String(), name: t.String(), description: t.Optional(t.String()) }), requireRole: ['OWNER'] },
+  )
+  .put(
+    '/:id',
+    async ({ params, body }) => {
+      const [row] = await db
+        .update(uoms)
+        .set({ ...toCamelCase(body), updatedAt: new Date() })
+        .where(eq(uoms.id, params.id))
+        .returning();
+      return ok(row, 'UOM berhasil diperbarui');
+    },
+    {
+      body: t.Object({ code: t.Optional(t.String()), name: t.Optional(t.String()), description: t.Optional(t.String()) }),
+      requireRole: ['OWNER'],
+    },
+  )
+  .delete(
+    '/:id',
+    async ({ params }) => {
+      await db.update(uoms).set({ deletedAt: new Date() }).where(eq(uoms.id, params.id));
+      return ok(null, 'UOM berhasil dihapus');
+    },
+    { requireRole: ['OWNER'] },
+  );
+
 export const masterDataRoutes = new Elysia()
   .use(categoriesRoutes)
   .use(suppliersRoutes)
   .use(customersRoutes)
   .use(taxesRoutes)
-  .use(discountsRoutes);
+  .use(discountsRoutes)
+  .use(uomsRoutes);
