@@ -28,6 +28,8 @@ Goal: Meningkatkan visualisasi interaktif pada Dashboard, merestrukturisasi navi
   * [x] Implementation komponen **Line Chart Interaktif**: Visualisasi tren omset penjualan (harian/bulanan) dengan *tooltip hover* / *tap* yang menampilkan detail nilai nominal terformat (`formatRupiah`) — `LineChart.svelte` (native SVG).
   * [x] Implementation komponen **Pie / Donut Chart Interaktif**: Visualisasi proporsi penjualan per Kategori Produk dan Kanal Pembayaran dengan indikator persentase & interaksi sentuh/hover — `DonutChart.svelte`, didukung `salesByCategory`/`salesByPaymentMethod` di `GET /dashboard/summary`.
   * [x] KPI Cards Real-Time: Widget ringkasan Total Penjualan, Laba Kotor, Total PO Bulan Ini, dan Alert Stok Minimum yang terhubung ke backend.
+  * [x] **Dashboard Filtering** (`period=today|month|year|custom`): Segmented control Hari Ini/Bulan Ini/Tahun Ini/Custom (date range picker) di atas Dashboard — seluruh KPI Card, Line Chart, Donut Chart, Top 5 Produk, dan Total PO mengikuti satu rentang tanggal yang sama (`GET /dashboard/summary` resolve `[rangeStart, rangeEnd)`); Tren Omset otomatis bucket per-jam (today), per-hari (≤31 hari), atau per-bulan (rentang panjang/tahunan) sehingga chart tetap terbaca (lebar chart dialokasikan per-titik + scroll horizontal, bukan dipepatkan).
+  * [x] **Export PDF**: Tombol *Export PDF* men-trigger `window.print()` (pola sama seperti `ReceiptPrint.svelte`) dengan print-only header (judul, periode, waktu cetak); sidebar/header/filter otomatis tersembunyi lewat `print:hidden` saat mencetak.
 * [x] **Restrukturisasi Navigation Master Data (Sidebar Routes):**
   * [x] Pisahkan navigasi Master Data dari model tab tunggal menjadi **Accordion/Sub-Menu Dedicated** pada Sidebar:
     * `/master-data/categories` (Kategori)
@@ -108,7 +110,7 @@ Goal: Mengubah modul Laporan menjadi Accordion Sub-Menu Sidebar dengan 6 laporan
 
 ## Definition of Done (DoD) - MVP 3
 
-1. [x] **Interactive Visual Dashboard:** Dashboard dilengkapi dengan Line Chart & Pie/Donut Chart interaktif yang responsif terhadap interaksi pengguna (*hover/tap*).
+1. [x] **Interactive Visual Dashboard:** Dashboard dilengkapi dengan Line Chart & Pie/Donut Chart interaktif yang responsif terhadap interaksi pengguna (*hover/tap*), filter periode (Hari Ini/Bulan Ini/Tahun Ini/Custom), dan Export PDF.
 2. [x] **Master Data Structure & Relasi:** Navigasi Master Data diakses melalui Sub-Menu Sidebar Dedicated, dan form Produk/SKU terintegrasi dengan relasi *Default Supplier*.
 3. [x] **Global Toggle Standard:** Komponen input `Select` status aktif/non-aktif pada 8 Master Data sepenuhnya diganti menggunakan Toggle Switch, serta *Strict Filtering* (`is_active = true`) berjalan konsisten di seluruh modul transaksi.
 4. [x] **Matrix Variant Engine:** Sub-menu **Varian** dilengkapi dengan Matrix Generator dan Bulk Fill yang mampu men-generate kombinasi SKU secara instan.
