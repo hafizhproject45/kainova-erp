@@ -296,7 +296,6 @@
           label="UOM (Satuan)"
           name="uomId"
           required
-          searchable
           items={uoms.map((u) => ({ value: u.id, name: u.name }))}
           bind:value={form.uomId}
         />
