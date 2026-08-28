@@ -1,7 +1,7 @@
 # DEVELOPMENT_ROADMAP_MVP_1.md - KaiNova ERP
 
 > **Legend status:** `[x]` Selesai & teruji · `[~]` Sebagian/berjalan tapi belum lengkap · `[ ]` Belum dikerjakan.
-> Update terakhir: 2026-08-27, setelah backend Phase 1–3 + frontend 7 modul selesai di-scaffold dan diverifikasi end-to-end (login → master data → PO → terima barang → checkout POS dgn diskon & pajak). Lihat `README.md` untuk cara menjalankan.
+> Update terakhir: 2026-08-28 — seluruh item Phase 1-4 & DoD **selesai**: update/delete Produk & SKU, search/filter Master Data, cetak struk + scan barcode POS, chart tren omset di Dashboard, bug responsif mobile diperbaiki, dan integration test otomatis (`backend/tests/`, 13 test) menutup DoD #1-3. Lihat `README.md` untuk cara menjalankan aplikasi dan `backend/tests/README.md` untuk cara menjalankan test.
 
 ## Phase 1: Core Foundation & Master Data (Sprint 1)
 
@@ -48,7 +48,7 @@ Goal: Menyajikan dashboard ringkasan harian dan laporan bisnis KaiNova yang bisa
 
 ## Belum Ada di Roadmap Awal (Ditemukan Selama Development)
 
-* [ ] Integration test otomatis — **belum ada test sama sekali** (unit maupun integration). Semua verifikasi sejauh ini manual lewat `curl`/browser.
+* [x] Integration test otomatis — `backend/tests/` (`bun:test`), 13 test lewat 3 file, semua pass. Server Elysia asli di-boot & dites lewat HTTP `fetch` sungguhan (bukan panggil handler langsung), jalan di database + port terpisah dari dev (`kainova_erp_test` / port 3099, lihat `.env.test.example` & `tests/README.md`) — aman dijalankan walau server dev sedang aktif. Cakupan: 8 kombinasi diskon/pajak checkout, FIFO & Average costing (Pembelian → Penjualan), rollback checkout multi-item, dan Stock Opname surplus/defisit + guard status `POSTED`. Jalankan dengan `bun run test`.
 * [x] `db.transaction()` di alur `checkout`, `purchase-orders/:id/receive`, dan `stock-adjustments/:id/post` — selesai & diverifikasi manual (termasuk skenario rollback: keranjang 2 item, item ke-2 gagal karena stok kurang → potongan stok item ke-1 ikut dibatalkan).
 * [x] Fix bug: `onError` handler backend sempat menelan error validasi Elysia jadi generic 500 — sudah diperbaiki agar mengembalikan 422 dengan pesan jelas.
 * [x] Fix bug: `product_variants.total_stock` di `purchase-orders/:id/receive` sebelumnya **overwrite** (`= qty`) alih-alih **increment** (`+= qty`) — kalau ada PO kedua untuk variant yang sama, stok lama akan tertimpa. Sudah diperbaiki.
@@ -56,9 +56,9 @@ Goal: Menyajikan dashboard ringkasan harian dan laporan bisnis KaiNova yang bisa
 
 ## Definition of Done (DoD)
 
-1. [ ] Seluruh kode backend teruji melalui integration test pada skenario pemotongan stok FIFO/Average, termasuk dari jalur Pembelian, Penjualan, maupun Adjustment Stok. *(belum — belum ada test otomatis sama sekali)*
-2. [~] Tidak ada selisih perhitungan antara jumlah HPP transaksi dengan stok batch yang tersisa. *(logic FIFO sudah benar & diverifikasi manual, termasuk skenario rollback saat checkout multi-item gagal di tengah jalan; belum ada test otomatis yang menjamin ini terus benar seiring perubahan kode ke depan)*
-3. [~] Kalkulasi diskon & pajak di checkout POS teruji untuk kombinasi: tanpa diskon/pajak sama sekali; hanya diskon per-item; hanya diskon keseluruhan; diskon per-item + keseluruhan bersamaan; hanya PPN; hanya PPh; serta PPN dan PPh bersamaan. *(baru 1 kombinasi — diskon item + keseluruhan + PPN + PPh sekaligus — yang diverifikasi manual end-to-end; kombinasi lain belum ditest eksplisit)*
+1. [x] Seluruh kode backend teruji melalui integration test pada skenario pemotongan stok FIFO/Average, termasuk dari jalur Pembelian, Penjualan, maupun Adjustment Stok. *(`backend/tests/costing.test.ts` + `adjustments.test.ts` — FIFO: batch tertua dipotong duluan & HPP dari harga batch; Average: HPP dari `avg_cost` weighted-average bukan fallback diam-diam ke batch pertama; Adjustment: surplus bikin batch baru + rehitung `avg_cost`, defisit potong FIFO tanpa mengubah `avg_cost`.)*
+2. [x] Tidak ada selisih perhitungan antara jumlah HPP transaksi dengan stok batch yang tersisa. *(diverifikasi otomatis: `cost_of_goods` di `sales_order_items` dicocokkan angka pastinya terhadap `remaining_qty` tiap batch setelah checkout, termasuk skenario rollback multi-item — lihat `costing.test.ts`.)*
+3. [x] Kalkulasi diskon & pajak di checkout POS teruji untuk kombinasi: tanpa diskon/pajak sama sekali; hanya diskon per-item; hanya diskon keseluruhan; diskon per-item + keseluruhan bersamaan; hanya PPN; hanya PPh; serta PPN dan PPh bersamaan. *(`backend/tests/checkout.test.ts` — ke-7 kombinasi plus kombinasi ke-8 "semua sekaligus", semua pass dengan angka exact sesuai formula PRODUCT_KNOWLEDGE.md §4.)*
 4. [x] Adjustment stok (opname & saldo awal) tidak bisa mengubah stok tanpa melalui status `POSTED`, dan setiap adjustment tercatat dengan `reason` yang jelas untuk audit trail.
 5. [x] Semua laporan bisa difilter, ditampilkan dalam format print-friendly, dan diexport ke PDF & Excel tanpa selisih angka terhadap data mentah. *(filter, print, export PDF & Excel semua sudah jalan & teruji dengan angka yang cocok terhadap data mentah)*
 6. [x] Tampilan UI Svelte responsif diakses via perangkat tablet/laptop toko fisik Popyshop maupun mobile browser. *(divalidasi eksplisit di viewport mobile 375px & tablet 768px — Dashboard, Master Data, POS, Laporan; bug sidebar non-collapsible yang menyebabkan horizontal overflow di mobile sudah diperbaiki jadi off-canvas drawer.)*
