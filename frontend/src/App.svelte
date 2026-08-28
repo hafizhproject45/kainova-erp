@@ -11,6 +11,8 @@
   import SalesHistory from './routes/SalesHistory.svelte';
   import PurchasingList from './routes/purchasing/PurchasingList.svelte';
   import PurchasingCreate from './routes/purchasing/PurchasingCreate.svelte';
+  import PurchasingDetail from './routes/purchasing/PurchasingDetail.svelte';
+  import PurchasingDocument from './routes/purchasing/PurchasingDocument.svelte';
   import AdjustmentList from './routes/inventory/AdjustmentList.svelte';
   import AdjustmentCreate from './routes/inventory/AdjustmentCreate.svelte';
   import Reports from './routes/Reports.svelte';
@@ -29,6 +31,9 @@
     '/pos/history': SalesHistory,
     '/purchasing': PurchasingList,
     '/purchasing/create': PurchasingCreate,
+    '/purchasing/:id/edit': PurchasingCreate,
+    '/purchasing/:id/document': PurchasingDocument,
+    '/purchasing/:id': PurchasingDetail,
     '/stock-adjustment': AdjustmentList,
     '/inventory/adjustments/create': AdjustmentCreate,
     '/reports': Reports,

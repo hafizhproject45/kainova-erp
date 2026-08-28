@@ -4,7 +4,7 @@
   import { formatNumber, formatRupiah } from '../utils/formatters';
   import AppBadge from './AppBadge.svelte';
 
-  type ColumnFormat = 'text' | 'number' | 'currency' | 'badge';
+  type ColumnFormat = 'text' | 'number' | 'currency' | 'badge' | 'multiline';
 
   export type AppTableColumn = {
     key: string;
@@ -123,6 +123,8 @@
               <TableBodyCell class={alignClass(col.align)}>
                 {#if col.format === 'badge'}
                   <AppBadge status={String(row[col.key] ?? '')} />
+                {:else if col.format === 'multiline'}
+                  <div class="whitespace-pre-line">{row[col.key] ?? '-'}</div>
                 {:else}
                   {formatCell(row[col.key], col.format)}
                 {/if}

@@ -1,8 +1,22 @@
 <script lang="ts">
   import { Badge } from 'flowbite-svelte';
 
-  // Status yang dipakai lintas modul: Adjustment/PO/Sales (POSTED/DRAFT), Stock Alert (FAST_MOVING/DEAD_STOCK/ROP).
-  type Status = 'POSTED' | 'DRAFT' | 'FAST_MOVING' | 'DEAD_STOCK' | 'ROP_ALERT' | 'PAID' | 'CANCELLED' | (string & {});
+  // Status yang dipakai lintas modul: Adjustment/PO/Sales (POSTED/DRAFT), Stock Alert (FAST_MOVING/DEAD_STOCK/ROP),
+  // Procurement PR-to-PO lifecycle (MVP 3 Phase 2): DRAFT_PR/PO_ISSUED/PARTIALLY_RECEIVED/RECEIVED/COMPLETED.
+  type Status =
+    | 'POSTED'
+    | 'DRAFT'
+    | 'FAST_MOVING'
+    | 'DEAD_STOCK'
+    | 'ROP_ALERT'
+    | 'PAID'
+    | 'CANCELLED'
+    | 'DRAFT_PR'
+    | 'PO_ISSUED'
+    | 'PARTIALLY_RECEIVED'
+    | 'RECEIVED'
+    | 'COMPLETED'
+    | (string & {});
 
   let { status, class: className = '' }: { status: Status; class?: string } = $props();
 
@@ -12,9 +26,13 @@
     POSTED: 'green',
     PAID: 'green',
     RECEIVED: 'green',
+    COMPLETED: 'green',
     Aktif: 'green',
     DRAFT: 'gray',
+    DRAFT_PR: 'gray',
     PENDING: 'amber',
+    PO_ISSUED: 'primary',
+    PARTIALLY_RECEIVED: 'amber',
     Nonaktif: 'gray',
     FAST_MOVING: 'primary',
     DEAD_STOCK: 'red',
