@@ -21,6 +21,8 @@
     loading = false,
     emptyText = 'Belum ada data.',
     rowActions,
+    totals,
+    totalsLabel = 'Total',
   }: {
     columns: AppTableColumn[];
     rows: Record<string, unknown>[];
@@ -28,6 +30,9 @@
     loading?: boolean;
     emptyText?: string;
     rowActions?: Snippet<[Record<string, unknown>]>;
+    /** Baris ringkasan (jumlah kolom numerik) ditampilkan tebal di bawah tabel — dipakai Laporan. */
+    totals?: Record<string, unknown>;
+    totalsLabel?: string;
   } = $props();
 
   let sortKey = $state<string | null>(null);
@@ -130,6 +135,20 @@
             {/if}
           </TableBodyRow>
         {/each}
+        {#if totals}
+          <TableBodyRow class="bg-slate-50 font-semibold">
+            {#each columns as col, i (col.key)}
+              <TableBodyCell class={alignClass(col.align)}>
+                {#if i === 0}
+                  {totalsLabel}
+                {:else if col.key in totals}
+                  {formatCell(totals[col.key], col.format)}
+                {/if}
+              </TableBodyCell>
+            {/each}
+            {#if rowActions}<TableBodyCell></TableBodyCell>{/if}
+          </TableBodyRow>
+        {/if}
       {/if}
     </TableBody>
   </Table>

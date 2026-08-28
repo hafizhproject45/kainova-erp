@@ -90,28 +90,28 @@ Goal: Menerapkan skema Data Tabel dan pemformatan angka di modul Pembelian, Adju
 
 Goal: Mengubah Dashboard menjadi kaya visualisasi grafik dan angka terformat, serta memastikan seluruh Laporan otomatis memuat data saat pertama kali dibuka dan dapat difilter/diexport secara interaktif.
 
-* [ ] **Executive Dashboard Enhancements:**
-  * [ ] Visualisasi Chart Tren Omset & Laba Kotor Harian/Bulanan dengan tooltip angka terformat `formatRupiah`.
-  * [ ] Widget KPI Card (Omset Hari Ini, Laba Kotor, Total Transaksi) menggunakan font besar ber-delimiter ribuan (`Rp 12.500.000`).
-  * [ ] **Tabel ROP Alert & Top 5 Selling Products:** Seluruh angka Qty dan Nominal diformat rapi dengan `formatNumber` / `formatRupiah`.
-* [ ] **Reporting Tables & Autoload Data Implementation:**
-  * [ ] **Autoload Data on Mounting:** Memasang pemanggilan API data laporan secara otomatis pada siklus *lifecycle* `onMount()` / Svelte `load()` function menggunakan tanggal *default* (misal: `startDate` = 1 bulan yang lalu s/d `endDate` = hari ini). Data langsung dirender ke tabel tanpa harus menekan tombol *Search*.
-  * [ ] Seluruh halaman Laporan (Penjualan, Pembelian, Stok, Adjustment, Laba Rugi) disajikan dalam format **Flowbite Data Table** ber-delimiter ribuan dengan alignment *numeric right-aligned*.
-  * [ ] Header filter laporan disesuaikan (Datepicker Flowbite + Dropdown Filter) di mana tombol *Apply/Filter* digunakan untuk memperbarui data yang *sudah tampil*.
-  * [ ] Penandaan field filter wajib dengan bintang merah `*`.
-  * [ ] Layout *Print-Friendly View* (`@media print`) yang menyembunyikan navigasi sidebar/navbar.
-  * [ ] Tombol Export PDF & Excel dengan icon menarik dan indikator *loading/downloading*.
+* [x] **Executive Dashboard Enhancements:**
+  * [x] Visualisasi Chart Tren Omset dengan tooltip angka terformat `formatRupiah` — versi Harian (7 hari terakhir), belum ada toggle agregasi Bulanan (di luar scope data yang tersedia saat ini, bisa ditambah kalau dibutuhkan).
+  * [x] Widget KPI Card (Omset Hari Ini, Laba Kotor, Total Transaksi) menggunakan font besar ber-delimiter ribuan (`Rp 12.500.000`) via `formatRupiah`/`formatNumber` terpusat.
+  * [x] **Tabel ROP Alert & Top 5 Selling Products:** keduanya pakai `<AppTable>`, Qty & nominal diformat `formatNumber`/`formatRupiah`. Top 5 Selling Products baru ditambahkan (backend `GET /dashboard/summary` field `topSellingProducts`, lookback 30 hari).
+* [x] **Reporting Tables & Autoload Data Implementation:**
+  * [x] **Autoload Data on Mounting:** `onMount()` di `Reports.svelte` langsung memanggil laporan dengan `from` = 30 hari lalu, `to` = hari ini — data tampil tanpa klik tombol.
+  * [x] Seluruh halaman Laporan (Penjualan, Pembelian, Stok, Adjustment, Laba Rugi) disajikan dalam `<AppTable>` ber-delimiter ribuan dengan alignment numeric right-aligned + baris Total di bawah (kolom nominal vs qty dibedakan lewat daftar key eksplisit, karena JSON API tidak membawa metadata tipe kolom).
+  * [x] Header filter laporan pakai `AppSelect` (jenis laporan) + date picker; tombol *Tampilkan* dipakai untuk memperbarui data yang sudah tampil (bukan auto-refresh saat filter berubah).
+  * [x] Field filter wajib (Jenis Laporan, Dari/Sampai Tanggal) diberi tanda bintang merah `*`.
+  * [x] Layout Print-Friendly (`@media print`) menyembunyikan sidebar/navbar — sudah ada dari MVP 1 di `Layout.svelte` (`print:hidden`), diperkuat lagi di `Reports.svelte`.
+  * [x] Tombol Export PDF & Excel dengan icon (`FilePdfOutline`/`FileExportOutline`) dan indikator loading (`AppButton loading`).
 
 ---
 
 ## Definition of Done (DoD) - MVP 2
 
-1. [ ] **Master Data UOM Integration:** Master Data UOM (Unit of Measure) tersedia penuh dan terintegrasi secara wajib (required `*`) pada form pembuatan/pengeditan Produk.
-2. [ ] **Autoload Report Data:** Saat user membuka halaman Laporan (Penjualan, Pembelian, Stok, Adjustment, Laba Rugi), data tabel **otomatis langsung muncul** menggunakan filter *range default* tanpa perlu menekan tombol *Search* terlebih dahulu.
-3. [ ] **Consistent Number Formatting:** Seluruh angka nominal uang (Harga, HPP, DPP, PPN, PPh, Subtotal, Grand Total) disajikan dengan format mata uang Rupiah (`Rp 100.000`), dan seluruh angka kuantitas/stok disajikan dengan delimiter ribuan (`1.000`) di seluruh komponen UI, tabel, form, dan dashboard.
-4. [ ] **Dedicated Add & Edit Pages:** Proses Tambah dan Edit data 7 Master Data (Customer, Supplier, Pajak, Diskon, UOM, Kategori, Produk) dilakukan di **halaman terpisah (route khusus)**, bukan di modal/inline form pada halaman list.
-5. [ ] **Full Table Layout:** Semua penyajian daftar/list data di **seluruh 7 modul** (Master Data, POS History, PO, Stock Adjustment, Laporan, Dashboard Alerts) menggunakan komponen **Data Table Flowbite** yang rapi.
-6. [ ] **Required Field Indicator:** Seluruh *input field* yang wajib diisi pada form Add/Edit otomatis menampilkan tanda **bintang merah `*`** pada labelnya.
-7. [ ] **Rich Iconography:** Penggunaan Icon (Lucide/Flowbite Icons) diterapkan secara konsisten pada Navigasi Sidebar, Action Table Buttons (Edit ✏️, Delete 🗑️, View 👁️), Form Navigation (Back ⬅️, Save 💾), dan Dashboard Widgets.
-8. [ ] **Color Palette Integration:** Skema warna Primary (Emerald/Teal), Secondary (Rose/Coral), dan Tertiary (Amber/Gold) terintegrasi dengan harmonis di seluruh UI.
-9. [ ] **Responsive & Dynamic Dashboard:** Dashboard dilengkapi dengan Grafik (Chart) serta layout yang responsif saat diakses dari **Tablet Kasir POS** maupun **Mobile Browser**.
+1. [x] **Master Data UOM Integration:** Master Data UOM (Unit of Measure) tersedia penuh dan terintegrasi secara wajib (required `*`) pada form pembuatan/pengeditan Produk.
+2. [x] **Autoload Report Data:** Saat user membuka halaman Laporan (Penjualan, Pembelian, Stok, Adjustment, Laba Rugi), data tabel **otomatis langsung muncul** menggunakan filter *range default* (30 hari terakhir) tanpa perlu menekan tombol *Search* terlebih dahulu.
+3. [x] **Consistent Number Formatting:** Seluruh angka nominal uang (Harga, HPP, DPP, PPN, PPh, Subtotal, Grand Total) disajikan dengan format mata uang Rupiah (`Rp 100.000`), dan seluruh angka kuantitas/stok disajikan dengan delimiter ribuan (`1.000`) di seluruh komponen UI, tabel, form, dan dashboard — via `formatRupiah`/`formatNumber` terpusat & `<AppTable>`/`<AppInput numeric>`.
+4. [x] **Dedicated Add & Edit Pages:** Proses Tambah dan Edit data 7 Master Data (Customer, Supplier, Pajak, Diskon, UOM, Kategori, Produk) dilakukan di **halaman terpisah (route khusus)**, bukan di modal/inline form pada halaman list.
+5. [x] **Full Table Layout:** Semua penyajian daftar/list data di seluruh modul (Master Data, POS History, PO, Stock Adjustment, Laporan, Dashboard Alerts/Top 5) menggunakan `<AppTable>` yang konsisten.
+6. [x] **Required Field Indicator:** Seluruh *input field* yang wajib diisi pada form Add/Edit & filter Laporan otomatis menampilkan tanda **bintang merah `*`** pada labelnya (`AppInput`/`AppSelect` prop `required`).
+7. [x] **Rich Iconography:** Icon Flowbite diterapkan di Navigasi Sidebar (baru ditambahkan Phase 4), Action Table Buttons (Edit/Delete/Print), Form Navigation (Back/Save), dan Dashboard/POS Widgets.
+8. [~] **Color Palette Integration:** Primary (Emerald) dominan & konsisten di seluruh UI (tombol, badge sukses, active nav, chart). Secondary (Rose) & Tertiary (Amber) sudah ada sebagai token siap pakai (`AppButton variant="secondary"`, badge kuning ROP Alert) tapi belum sengaja "dipaksakan" tampil di banyak tempat — MVP 2 belum punya use-case yang jelas untuk warna aksen tersebut di luar apa yang sudah dipakai.
+9. [~] **Responsive & Dynamic Dashboard:** Dashboard sudah pakai grid responsif (`grid-cols-1 sm:grid-cols-3`, dll, dari fondasi MVP 1) dan chart bar sederhana. Belum di-re-verifikasi khusus di breakpoint Tablet Kasir POS pada sesi Phase 4 ini — layak dicek ulang manual kalau ada device asli yang dipakai di toko.

@@ -1,7 +1,7 @@
 import { Elysia, t } from 'elysia';
-import { and, eq, gte, isNull, lt } from 'drizzle-orm';
+import { and, eq, gte, inArray, isNull, lt } from 'drizzle-orm';
 import { db } from '../../config/database';
-import { productVariants, salesOrderItems, salesOrders } from '../../db/schema';
+import { productVariants, products, salesOrderItems, salesOrders } from '../../db/schema';
 import { authPlugin } from '../auth';
 import { ok } from '../../utils/http';
 
@@ -73,6 +73,31 @@ export const dashboardRoutes = new Elysia({ prefix: '/dashboard' }).use(authPlug
       })
       .filter((v) => v.totalStock <= v.rop);
 
+    // Top 5 Produk Terlaris (lookback 30 hari, sama dengan basis kalkulasi ROP di atas).
+    const topVariantIds = [...soldByVariant.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([variantId]) => variantId);
+    const topVariantRows =
+      topVariantIds.length > 0
+        ? await db
+            .select({ id: productVariants.id, sku: productVariants.sku, productId: productVariants.productId })
+            .from(productVariants)
+            .where(inArray(productVariants.id, topVariantIds))
+        : [];
+    const productIds = [...new Set(topVariantRows.map((v) => v.productId))];
+    const productRows =
+      productIds.length > 0 ? await db.select({ id: products.id, name: products.name }).from(products).where(inArray(products.id, productIds)) : [];
+    const productNameById = new Map(productRows.map((p) => [p.id, p.name]));
+    const topSellingProducts = topVariantIds.map((variantId) => {
+      const variant = topVariantRows.find((v) => v.id === variantId);
+      return {
+        sku: variant?.sku ?? '-',
+        productName: variant ? (productNameById.get(variant.productId) ?? '-') : '-',
+        qtySold: soldByVariant.get(variantId) ?? 0,
+      };
+    });
+
     // Tren omset 7 hari terakhir (termasuk hari ini) untuk chart di dashboard.
     const trendStart = new Date(startOfDay);
     trendStart.setDate(trendStart.getDate() - (TREND_DAYS - 1));
@@ -100,6 +125,7 @@ export const dashboardRoutes = new Elysia({ prefix: '/dashboard' }).use(authPlug
       grossProfitToday,
       lowStockAlerts,
       revenueTrend,
+      topSellingProducts,
     });
   },
   { query: t.Object({ date: t.Optional(t.String()) }), requireRole: ['OWNER'] },
